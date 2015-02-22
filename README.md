@@ -9,7 +9,7 @@ Date manipulation library.
 Install via composer:
 
 ```sh
-composer install minphp/date:dev-master
+composer require minphp/date:dev-master
 ```
 
 ## Basic Usage
