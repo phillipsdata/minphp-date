@@ -1,5 +1,5 @@
 <?php
-namespace minphp\Date;
+namespace Minphp\Date;
 
 /**
  * Provides methods useful in formatting dates and date timestamps.
@@ -18,7 +18,7 @@ class Date
     const RFC3339 = "Y-m-d\TH:i:sP";
     const RSS = "D, d M Y H:i:s O";
     const W3C = "Y-m-d\TH:i:sP";
-    
+
     /**
      * @var array Common date formats, predefined for PHP's date function, overwritable
      * by the constructor
@@ -30,10 +30,10 @@ class Date
         'year' => "Y",
         'date_time' => "M d y g:i:s A",
     );
-    
+
     private $timezone_from;
     private $timezone_to;
-    
+
     /**
      * Constructs a new Date component using the given date formats in $formats.
      *
@@ -50,7 +50,7 @@ class Date
         $this->setFormats($formats);
         $this->setTimezone($timezone_from, $timezone_to);
     }
-    
+
     /**
      * Set the current time zone to be used during date calculations
      *
@@ -64,7 +64,7 @@ class Date
         $this->timezone_to = $to;
         return $this;
     }
-    
+
     /**
      * Sets the formats to use as the pre-defined types.
      *
@@ -81,7 +81,7 @@ class Date
         $this->formats = array_merge($this->formats, (array)$formats);
         return $this;
     }
-    
+
     /**
      * Format a date using one of the date formats provided to the constructor,
      * or predefined in this class.
@@ -94,7 +94,7 @@ class Date
     {
         return $this->format((isset($this->formats[$format]) ? $this->formats[$format] : $format), $date);
     }
-    
+
     /**
      * Format two dates to represent a range between them.
      *
@@ -121,12 +121,12 @@ class Date
                 'other' => "F j, Y"
             )
         );
-        
+
         $formats = $this->mergeArrays($default_formats, (array)$formats);
-    
+
         $s_date = date("Ymd", $this->toTime($start));
         $e_date = date("Ymd", $this->toTime($end));
-        
+
         if ($s_date == $e_date) {
             // Same day
             return $this->format($formats['start']['same_day'], $start)
@@ -144,7 +144,7 @@ class Date
             return $this->format($formats['start']['other'], $start) . $this->format($formats['end']['other'], $end);
         }
     }
-    
+
     /**
      * Format a date using the supply date string
      *
@@ -162,17 +162,17 @@ class Date
             if ($this->timezone_from !== null) {
                 $prev_timezone = $this->setDefaultTimezone($this->timezone_from);
             }
-            
+
             $time = $this->toTime($date);
-            
+
             // Set the appropriate timezone
             if ($this->timezone_to !== null) {
                 $this->setDefaultTimezone($this->timezone_to);
             }
-            
+
             // Format the date
             $formatted_date = date($format, $time);
-            
+
             // Restore the timezone value
             if (isset($prev_timezone)) {
                 $this->setDefaultTimezone($prev_timezone);
@@ -181,7 +181,7 @@ class Date
         }
         return null;
     }
-    
+
     /**
      * Convert a date string to Unix time
      *
@@ -195,7 +195,7 @@ class Date
         }
         return $date;
     }
-    
+
     /**
      * Returns an array of months in key/value pairs
      *
@@ -214,7 +214,7 @@ class Date
         }
         return $months;
     }
-    
+
     /**
      * Returns an array of keys in key/value pairs
      *
@@ -233,7 +233,7 @@ class Date
         }
         return $years;
     }
-    
+
     /**
      * Sets the default timezone
      *
@@ -248,7 +248,7 @@ class Date
         }
         return $cur_timezone;
     }
-    
+
     /**
      * Retrieve all timezones or those for a specific country
      *
@@ -259,10 +259,10 @@ class Date
      */
     public function getTimezones($country = null)
     {
-        
+
         // Hold the array of timezone data
         $tz_data = array();
-    
+
         $accepted_zones = array_flip(array(
             "Africa",
             "America",
@@ -276,36 +276,36 @@ class Date
             "Pacific",
             "UTC"
         ));
-    
+
         $listing = DateTimeZone::listIdentifiers(DateTimeZone::PER_COUNTRY, $country);
         $num_listings = count($listing);
-        
+
         // Associate each timezone identifier with its meta data
         for ($i=0; $i<$num_listings; $i++) {
             // Convert timezone identifier to timezone array
             $zone = new DateTimeZone($listing[$i]);
             $zone_info = $zone->getTransitions(time(), time());
-            
+
             $timezone = $this->timezoneFromIdentifier($zone_info[0], $listing[$i]);
             $primary_zone_name = isset($timezone['zone'][0]) ? $timezone['zone'][0] : false;
-    
+
             // Only allow accepted zones into the listing
             if (!isset($accepted_zones[$primary_zone_name])) {
                 continue;
             }
-            
+
             // Set the timezone to appear under its primary location
             $tz_data[$primary_zone_name][] = $timezone;
         }
-        
+
         // Sort each section by UTC offset
         foreach ($tz_data as $zone => $data) {
             $this->insertionSort($tz_data[$zone], "offset");
         }
-        
+
         return $tz_data;
     }
-    
+
     /**
      * Constructs the timezone meta data using the given timezone and its identifier
      *
@@ -326,13 +326,13 @@ class Date
     private function timezoneFromIdentifier(&$zone_info, $identifier)
     {
         $zone = explode('/', $identifier, 2);
-        
+
         $offset = isset($zone_info['offset']) ? $zone_info['offset'] : 0; // offset
-        
+
         $offset_h = str_pad(abs((int)($offset/3600)), 2, '0', STR_PAD_LEFT); // offset in hours
         $offset_h = ($offset < 0 ? true : false ? "-" : "+") . $offset_h;
         $offset_m = str_pad(abs((int)(($offset/60)%60)), 2, '0', STR_PAD_LEFT); // offset in mins
-        
+
         $timezone = array(
             'id' => $identifier,
             'name' => str_replace('_', ' ', isset($zone[1]) ? $zone[1] : $zone[0]),
@@ -340,10 +340,10 @@ class Date
             'utc' => $offset_h . ":" . $offset_m . (isset($zone_info['isdst']) && $zone_info['isdst'] ? " DST" : ""),
             'zone' => $zone
         );
-    
+
         return $timezone;
     }
-    
+
     /**
      * Insertion sort algorithm for numerically indexed arrays with string indexed elements.
      * Will sort items in $array based on values in the $key index. Sorts arrays in place.
@@ -357,7 +357,7 @@ class Date
             self::insertSortInsert($array, $i, $array[$i], $key);
         }
     }
-    
+
     /**
      * Insertion sort in inserter. Performs comparison and insertion for the given
      * element within the given array.
@@ -375,7 +375,7 @@ class Date
         }
         $array[$i+1] = $element;
     }
-    
+
     /**
      * Extends one array using another to overwrite existing values. Recursively merges
      * data.
@@ -386,7 +386,7 @@ class Date
      */
     private function mergeArrays(array $arr1, array $arr2)
     {
-    
+
         foreach ($arr2 as $key => $value) {
             if (array_key_exists($key, $arr1) && is_array($value)) {
                 $arr1[$key] = $this->mergeArrays($arr1[$key], $arr2[$key]);

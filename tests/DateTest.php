@@ -1,10 +1,11 @@
 <?php
-namespace minphp\Date;
+namespace Minphp\Date\Tests;
 
-use \PHPUnit_Framework_TestCase;
+use PHPUnit_Framework_TestCase;
+use Minphp\Date\Date;
 
 /**
- * @coversDefaultClass \minphp\Date\Date
+ * @coversDefaultClass \Minphp\Date\Date
  */
 class DateTest extends PHPUnit_Framework_TestCase
 {
@@ -13,6 +14,6 @@ class DateTest extends PHPUnit_Framework_TestCase
      */
     public function testConstruct()
     {
-        $this->assertInstanceOf('minphp\Date\Date', new Date());
+        $this->assertInstanceOf('\Minphp\Date\Date', new Date());
     }
 }
