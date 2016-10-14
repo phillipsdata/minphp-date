@@ -1,6 +1,8 @@
 <?php
 namespace Minphp\Date;
 
+use DateTimeZone;
+
 /**
  * Provides methods useful in formatting dates and date timestamps.
  */
