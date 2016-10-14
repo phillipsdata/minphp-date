@@ -279,7 +279,11 @@ class Date
             "UTC"
         ));
 
-        $listing = DateTimeZone::listIdentifiers(DateTimeZone::PER_COUNTRY, $country);
+        if ($country) {
+            $listing = DateTimeZone::listIdentifiers(DateTimeZone::PER_COUNTRY, $country);
+        } else {
+            $listing = DateTimeZone::listIdentifiers();
+        }
         $num_listings = count($listing);
 
         // Associate each timezone identifier with its meta data
