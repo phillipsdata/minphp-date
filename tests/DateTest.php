@@ -50,10 +50,10 @@ class DateTest extends PHPUnit_Framework_TestCase
      */
     public function formatProvider()
     {
-        return [
-            [null],
-            [['day' => 'd']]
-        ];
+        return array(
+            array(null),
+            array(array('day' => 'd'))
+        );
     }
 
     /**
@@ -88,22 +88,22 @@ class DateTest extends PHPUnit_Framework_TestCase
      */
     public function castProvider()
     {
-        return [
-            ['2016-05-12T00:00:00+00:00', 'Y-m-d', 'UTC', 'UTC', '2016-05-12'],
-            ['2016-05-12T07:00:00+00:00', 'Y-m-d H:i:s', 'UTC', 'UTC', '2016-05-12 07:00:00'],
-            ['2016-05-12T00:00:00+00:00', 'O', 'UTC', 'UTC', '+0000'],
-            ['2016-05-12T00:00:00+00:00', 'Y-m-d', 'UTC', 'America/Los_Angeles', '2016-05-11'],
-            ['2016-05-12T07:00:00+00:00', 'Y-m-d H:i:s', 'UTC', 'America/Los_Angeles', '2016-05-12 00:00:00'],
-            ['2016-05-12T00:00:00+00:00', 'O', 'UTC', 'America/Los_Angeles', '-0700'],
-            ['2016-05-12T00:00:00-07:00', 'Y-m-d', 'America/Los_Angeles', 'UTC', '2016-05-12'],
-            ['2016-05-12T00:00:00-07:00', 'Y-m-d H:i:s', 'America/Los_Angeles', 'UTC', '2016-05-12 07:00:00'],
-            ['2016-12-12T00:00:00-08:00', 'Y-m-d H:i:s', 'America/Los_Angeles', 'UTC', '2016-12-12 08:00:00'],
-            ['2016-05-12 00:00:00', 'Y-m-d H:i:s', 'America/Los_Angeles', 'UTC', '2016-05-12 07:00:00'],
-            ['2016-12-12 00:00:00', 'Y-m-d H:i:s', 'America/Los_Angeles', 'UTC', '2016-12-12 08:00:00'],
-            ['2016-05-12 07:00:00', 'Y-m-d H:i:s', 'UTC', 'America/Los_Angeles', '2016-05-12 00:00:00'],
-            ['2016-12-12 08:00:00', 'Y-m-d H:i:s', 'UTC', 'America/Los_Angeles', '2016-12-12 00:00:00'],
-            [null, 'Y', 'UTC', 'UTC', date('Y')]
-        ];
+        return array(
+            array('2016-05-12T00:00:00+00:00', 'Y-m-d', 'UTC', 'UTC', '2016-05-12'),
+            array('2016-05-12T07:00:00+00:00', 'Y-m-d H:i:s', 'UTC', 'UTC', '2016-05-12 07:00:00'),
+            array('2016-05-12T00:00:00+00:00', 'O', 'UTC', 'UTC', '+0000'),
+            array('2016-05-12T00:00:00+00:00', 'Y-m-d', 'UTC', 'America/Los_Angeles', '2016-05-11'),
+            array('2016-05-12T07:00:00+00:00', 'Y-m-d H:i:s', 'UTC', 'America/Los_Angeles', '2016-05-12 00:00:00'),
+            array('2016-05-12T00:00:00+00:00', 'O', 'UTC', 'America/Los_Angeles', '-0700'),
+            array('2016-05-12T00:00:00-07:00', 'Y-m-d', 'America/Los_Angeles', 'UTC', '2016-05-12'),
+            array('2016-05-12T00:00:00-07:00', 'Y-m-d H:i:s', 'America/Los_Angeles', 'UTC', '2016-05-12 07:00:00'),
+            array('2016-12-12T00:00:00-08:00', 'Y-m-d H:i:s', 'America/Los_Angeles', 'UTC', '2016-12-12 08:00:00'),
+            array('2016-05-12 00:00:00', 'Y-m-d H:i:s', 'America/Los_Angeles', 'UTC', '2016-05-12 07:00:00'),
+            array('2016-12-12 00:00:00', 'Y-m-d H:i:s', 'America/Los_Angeles', 'UTC', '2016-12-12 08:00:00'),
+            array('2016-05-12 07:00:00', 'Y-m-d H:i:s', 'UTC', 'America/Los_Angeles', '2016-05-12 00:00:00'),
+            array('2016-12-12 08:00:00', 'Y-m-d H:i:s', 'UTC', 'America/Los_Angeles', '2016-12-12 00:00:00'),
+            array(null, 'Y', 'UTC', 'UTC', date('Y'))
+        );
     }
 
     /**
@@ -134,25 +134,25 @@ class DateTest extends PHPUnit_Framework_TestCase
      */
     public function dateRangeProvider()
     {
-        $formats = [
-            'start' => [
+        $formats = array(
+            'start' => array(
                 'same_day' => 'd',
                 'same_month' => 'm| ',
                 'same_year' => 'Y| ',
                 'other' => 'Y-m-d| '
-            ]
-        ];
+            )
+        );
 
-        return [
-            ['2016-03-01', '2017-03-01', null, 'March 1, 2016 - March 1, 2017'],
-            ['2016-02-02', '2016-02-03', null, 'February 2-3, 2016'],
-            ['2016-02-02', '2016-01-01', null, 'February 2 - January 1, 2016'],
-            ['2016-02-02', '2016-02-02', null, 'February 2, 2016'],
-            ['2016-03-01', '2017-03-01', $formats, '2016-03-01| March 1, 2017'],
-            ['2016-02-02', '2016-02-03', $formats, '02| 3, 2016'],
-            ['2016-02-02', '2016-01-01', $formats, '2016| January 1, 2016'],
-            ['2016-02-02', '2016-02-02', $formats, '2']
-        ];
+        return array(
+            array('2016-03-01', '2017-03-01', null, 'March 1, 2016 - March 1, 2017'),
+            array('2016-02-02', '2016-02-03', null, 'February 2-3, 2016'),
+            array('2016-02-02', '2016-01-01', null, 'February 2 - January 1, 2016'),
+            array('2016-02-02', '2016-02-02', null, 'February 2, 2016'),
+            array('2016-03-01', '2017-03-01', $formats, '2016-03-01| March 1, 2017'),
+            array('2016-02-02', '2016-02-03', $formats, '02| 3, 2016'),
+            array('2016-02-02', '2016-01-01', $formats, '2016| January 1, 2016'),
+            array('2016-02-02', '2016-02-02', $formats, '2')
+        );
     }
 
     /**
@@ -178,13 +178,13 @@ class DateTest extends PHPUnit_Framework_TestCase
      */
     public function timeProvider()
     {
-        return [
-            ['2016-01-01T00:00:00-07:00', 1451631600],
-            ['2016-01-01T00:00:00+00:00', 1451606400],
-            ['2017-11-15T00:00:00+12:00', 1510660800],
-            [1, 1],
-            [100000, 100000]
-        ];
+        return array(
+            array('2016-01-01T00:00:00-07:00', 1451631600),
+            array('2016-01-01T00:00:00+00:00', 1451606400),
+            array('2017-11-15T00:00:00+12:00', 1510660800),
+            array(1, 1),
+            array(100000, 100000)
+        );
     }
 
     /**
@@ -213,10 +213,10 @@ class DateTest extends PHPUnit_Framework_TestCase
      */
     public function monthsProvider()
     {
-        return [
-            [
+        return array(
+            array(
                 1, 12, 'm', 'n',
-                [
+                array(
                     '01' => '1',
                     '02' => '2',
                     '03' => '3',
@@ -229,11 +229,11 @@ class DateTest extends PHPUnit_Framework_TestCase
                     '10' => '10',
                     '11' => '11',
                     '12' => '12'
-                ]
-            ],
-            [3, 3, 'n', 'n', ['3' => '3']],
-            [4, 3, 'n', 'n', []]
-        ];
+                )
+            ),
+            array(3, 3, 'n', 'n', array('3' => '3')),
+            array(4, 3, 'n', 'n', array())
+        );
     }
 
     /**
@@ -262,10 +262,10 @@ class DateTest extends PHPUnit_Framework_TestCase
      */
     public function yearsProvider()
     {
-        return [
-            [
+        return array(
+            array(
                 2001, 2012, 'y', 'Y',
-                [
+                array(
                     '01' => '2001',
                     '02' => '2002',
                     '03' => '2003',
@@ -278,11 +278,11 @@ class DateTest extends PHPUnit_Framework_TestCase
                     '10' => '2010',
                     '11' => '2011',
                     '12' => '2012'
-                ]
-            ],
-            [2003, 2003, 'Y', 'Y', ['2003' => '2003']],
-            [2004, 2003, 'y', 'y', []]
-        ];
+                )
+            ),
+            array(2003, 2003, 'Y', 'Y', array('2003' => '2003')),
+            array(2004, 2003, 'y', 'y', array())
+        );
     }
 
     /**
@@ -310,7 +310,7 @@ class DateTest extends PHPUnit_Framework_TestCase
         }
 
         // Each timezone should consist of a set of keys
-        $keys = ['id', 'name', 'offset', 'utc', 'zone'];
+        $keys = array('id', 'name', 'offset', 'utc', 'zone');
         foreach ($timezones as $timezone) {
             foreach ($timezone as $data) {
                 foreach ($keys as $key) {
@@ -327,11 +327,11 @@ class DateTest extends PHPUnit_Framework_TestCase
      */
     public function timezoneProvider()
     {
-        return [
-            [null],
-            ['US'],
-            ['']
-        ];
+        return array(
+            array(null),
+            array('US'),
+            array('')
+        );
     }
 
     /**
