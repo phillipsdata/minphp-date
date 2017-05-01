@@ -1,6 +1,7 @@
 <?php
 namespace Minphp\Date;
 
+use DateTime;
 use DateTimeZone;
 
 /**
@@ -8,43 +9,47 @@ use DateTimeZone;
  */
 class Date
 {
-
-    const ATOM   = "Y-m-d\TH:i:sP";
-    const COOKIE = "l, d-M-y H:i:s T";
-    const ISO8601 = "Y-m-d\TH:i:sO";
-    const RFC822 = "D, d M y H:i:s O";
-    const RFC850 = "l, d-M-y H:i:s T";
-    const RFC1036 = "D, d M y H:i:s O";
-    const RFC1123 = "D, d M Y H:i:s O";
-    const RFC2822 = "D, d M Y H:i:s O";
-    const RFC3339 = "Y-m-d\TH:i:sP";
-    const RSS = "D, d M Y H:i:s O";
-    const W3C = "Y-m-d\TH:i:sP";
+    const ATOM   = 'Y-m-d\TH:i:sP';
+    const COOKIE = 'l, d-M-y H:i:s T';
+    const ISO8601 = 'Y-m-d\TH:i:sO';
+    const RFC822 = 'D, d M y H:i:s O';
+    const RFC850 = 'l, d-M-y H:i:s T';
+    const RFC1036 = 'D, d M y H:i:s O';
+    const RFC1123 = 'D, d M Y H:i:s O';
+    const RFC2822 = 'D, d M Y H:i:s O';
+    const RFC3339 = 'Y-m-d\TH:i:sP';
+    const RSS = 'D, d M Y H:i:s O';
+    const W3C = 'Y-m-d\TH:i:sP';
 
     /**
      * @var array Common date formats, predefined for PHP's date function, overwritable
      * by the constructor
      */
     private $formats = array(
-        'date' => "F j, Y",
-        'day' => "l, F j, Y",
-        'month' => "F Y",
-        'year' => "Y",
-        'date_time' => "M d y g:i:s A",
+        'date' => 'F j, Y',
+        'day' => 'l, F j, Y',
+        'month' => 'F Y',
+        'year' => 'Y',
+        'date_time' => 'M d y g:i:s A',
     );
-
+    /**
+     * @var string The start timezone
+     */
     private $timezone_from;
+    /**
+     * @var string The end timezone
+     */
     private $timezone_to;
 
     /**
      * Constructs a new Date component using the given date formats in $formats.
      *
      * @param array $formats An array of key/value pairs of PHP date format strings with the following keys:
-     * - date A date
-     * - day A date with day reference
-     * - month A month and year date
-     * - year A year date only
-     * - date_time A date time
+     *  - date A date
+     *  - day A date with day reference
+     *  - month A month and year date
+     *  - year A year date only
+     *  - date_time A date time
      * @see Date::cast()
      */
     public function __construct(array $formats = null, $timezone_from = null, $timezone_to = null)
@@ -71,11 +76,11 @@ class Date
      * Sets the formats to use as the pre-defined types.
      *
      * @param array $formats An array of key/value pairs of PHP date format strings with the following keys:
-     * - date A date
-     * - day A date with day reference
-     * - month A month and year date
-     * - year A year date only
-     * - date_time A date time
+     *  - date A date
+     *  - day A date with day reference
+     *  - month A month and year date
+     *  - year A year date only
+     *  - date_time A date time
      * @return this
      */
     public function setFormats(array $formats = null)
@@ -92,7 +97,7 @@ class Date
      * @param string $format A predefined date format in Date::$formats, a Date constant, or a date string.
      * @return string The date formatted using the given format rule, null on error
      */
-    public function cast($date, $format = "date")
+    public function cast($date, $format = 'date')
     {
         return $this->format((isset($this->formats[$format]) ? $this->formats[$format] : $format), $date);
     }
@@ -110,24 +115,28 @@ class Date
     public function dateRange($start, $end, $formats = null)
     {
         $default_formats = array(
-            'start'=>array(
-                'same_day'=>"F j, Y",
-                'same_month'=>"F j-",
-                'same_year'=>"F j - ",
-                'other' => "F j, Y - "
+            'start' => array(
+                'same_day' => 'F j, Y',
+                'same_month' => 'F j-',
+                'same_year' => 'F j - ',
+                'other' => 'F j, Y - '
             ),
-            'end'=>array(
-                'same_day'=>"",
-                'same_month'=>"j, Y",
-                'same_year'=>"F j, Y",
-                'other' => "F j, Y"
+            'end' => array(
+                'same_day' => '',
+                'same_month' => 'j, Y',
+                'same_year' => 'F j, Y',
+                'other' => 'F j, Y'
             )
         );
 
         $formats = $this->mergeArrays($default_formats, (array)$formats);
 
-        $s_date = date("Ymd", $this->toTime($start));
-        $e_date = date("Ymd", $this->toTime($end));
+        // Set the start/end dates using the timezone from date
+        $timezone = ($this->timezone_from ? $this->dateTimeZone($this->timezone_from) : null);
+        $start_date = $this->dateTime($start, $timezone);
+        $end_date = $this->dateTime($end, $timezone);
+        $s_date = $start_date->format('Ymd');
+        $e_date = $end_date->format('Ymd');
 
         if ($s_date == $e_date) {
             // Same day
@@ -160,27 +169,20 @@ class Date
         if ($date === null) {
             $date = time();
         }
-        if ($date != "" && $format != "") {
-            if ($this->timezone_from !== null) {
-                $prev_timezone = $this->setDefaultTimezone($this->timezone_from);
-            }
 
-            $time = $this->toTime($date);
-
-            // Set the appropriate timezone
-            if ($this->timezone_to !== null) {
-                $this->setDefaultTimezone($this->timezone_to);
-            }
-
+        if ($date != '' && $format != '') {
             // Format the date
-            $formatted_date = date($format, $time);
+            $from_timezone = ($this->timezone_from ? $this->dateTimeZone($this->timezone_from) : null);
+            $to_timezone = ($this->timezone_to ? $this->dateTimeZone($this->timezone_to) : null);
+            $date_time = $this->dateTime($date, $from_timezone);
 
-            // Restore the timezone value
-            if (isset($prev_timezone)) {
-                $this->setDefaultTimezone($prev_timezone);
+            if ($to_timezone) {
+                $date_time->setTimezone($to_timezone);
             }
-            return $formatted_date;
+
+            return $date_time->format($format);
         }
+
         return null;
     }
 
@@ -195,6 +197,7 @@ class Date
         if (!is_numeric($date)) {
             $date = strtotime($date);
         }
+
         return $date;
     }
 
@@ -207,13 +210,18 @@ class Date
      * @param string $value_format The format for the value
      * @return array An array of key/value pairs representing the range of months
      */
-    public function getMonths($start = 1, $end = 12, $key_format = "m", $value_format = "F")
+    public function getMonths($start = 1, $end = 12, $key_format = 'm', $value_format = 'F')
     {
+        // Set the date using the timezone from date
+        $timezone = ($this->timezone_from ? $this->dateTimeZone($this->timezone_from) : null);
+        $date = $this->dateTime(null, $timezone);
+
         $months = array();
-        for ($i=$start; $i<=$end; $i++) {
-            $time = strtotime(date("Y-" . $i . "-01"));
-            $months[date($key_format, $time)] = date($value_format, $time);
+        for ($i = $start; $i <= $end; $i++) {
+            $date->setDate($date->format('Y'), $i, 1);
+            $months[$date->format($key_format)] = $date->format($value_format);
         }
+
         return $months;
     }
 
@@ -226,29 +234,19 @@ class Date
      * @param string $value_format The format for the value
      * @return array An array of key/value pairs representing the range of years
      */
-    public function getYears($start, $end, $key_format = "y", $value_format = "Y")
+    public function getYears($start, $end, $key_format = 'y', $value_format = 'Y')
     {
-        $years = array();
-        for ($i=$start; $i<=$end; $i++) {
-            $time = strtotime(date($i . "-01-01"));
-            $years[date($key_format, $time)] = date($value_format, $time);
-        }
-        return $years;
-    }
+        // Set the date using the timezone from date
+        $timezone = ($this->timezone_from ? $this->dateTimeZone($this->timezone_from) : null);
+        $date = $this->dateTime(null, $timezone);
 
-    /**
-     * Sets the default timezone
-     *
-     * @param string $timezone The default timezone to set for this instance
-     */
-    private function setDefaultTimezone($timezone)
-    {
-        $cur_timezone = null;
-        if (function_exists("date_default_timezone_set")) {
-            $cur_timezone = date_default_timezone_get();
-            date_default_timezone_set($timezone);
+        $years = array();
+        for ($i = $start; $i <= $end; $i++) {
+            $date->setDate($i, 1, 1);
+            $years[$date->format($key_format)] = $date->format($value_format);
         }
-        return $cur_timezone;
+
+        return $years;
     }
 
     /**
@@ -261,22 +259,21 @@ class Date
      */
     public function getTimezones($country = null)
     {
-
         // Hold the array of timezone data
         $tz_data = array();
 
         $accepted_zones = array_flip(array(
-            "Africa",
-            "America",
-            "Antarctica",
-            "Arctic",
-            "Asia",
-            "Atlantic",
-            "Australia",
-            "Europe",
-            "Indian",
-            "Pacific",
-            "UTC"
+            'Africa',
+            'America',
+            'Antarctica',
+            'Arctic',
+            'Asia',
+            'Atlantic',
+            'Australia',
+            'Europe',
+            'Indian',
+            'Pacific',
+            'UTC'
         ));
 
         if ($country) {
@@ -289,7 +286,7 @@ class Date
         // Associate each timezone identifier with its meta data
         for ($i=0; $i<$num_listings; $i++) {
             // Convert timezone identifier to timezone array
-            $zone = new DateTimeZone($listing[$i]);
+            $zone = $this->dateTimeZone($listing[$i]);
             $zone_info = $zone->getTransitions(time(), time());
 
             $timezone = $this->timezoneFromIdentifier($zone_info[0], $listing[$i]);
@@ -306,7 +303,7 @@ class Date
 
         // Sort each section by UTC offset
         foreach ($tz_data as $zone => $data) {
-            $this->insertionSort($tz_data[$zone], "offset");
+            $this->insertionSort($tz_data[$zone], 'offset');
         }
 
         return $tz_data;
@@ -316,18 +313,18 @@ class Date
      * Constructs the timezone meta data using the given timezone and its identifier
      *
      * @param arary $zone_info An array of timezone information for the given identifier including:
-     * - ts Current time stamp
-     * - time Date/Time
-     * - offset The UTC offset in seconds
-     * - isdst Whether or this timezone is observing daylight savings (true/false)
-     * - abbr The abbreviation for this timezone
+     *  - ts Current time stamp
+     *  - time Date/Time
+     *  - offset The UTC offset in seconds
+     *  - isdst Whether or this timezone is observing daylight savings (true/false)
+     *  - abbr The abbreviation for this timezone
      * @param string $identifier The timezone identifier
      * @return An array of timezone meta data including:
-     * - id The timezone identifier
-     * - name The locale name
-     * - offset The offset from UTC in seconds
-     * - utc A string containg the HH::MM UTC offset
-     * - zone An array of zone names
+     *  - id The timezone identifier
+     *  - name The locale name
+     *  - offset The offset from UTC in seconds
+     *  - utc A string containg the HH::MM UTC offset
+     *  - zone An array of zone names
      */
     private function timezoneFromIdentifier(&$zone_info, $identifier)
     {
@@ -336,14 +333,14 @@ class Date
         $offset = isset($zone_info['offset']) ? $zone_info['offset'] : 0; // offset
 
         $offset_h = str_pad(abs((int)($offset/3600)), 2, '0', STR_PAD_LEFT); // offset in hours
-        $offset_h = ($offset < 0 ? true : false ? "-" : "+") . $offset_h;
+        $offset_h = ($offset < 0 ? true : false ? '-' : '+') . $offset_h;
         $offset_m = str_pad(abs((int)(($offset/60)%60)), 2, '0', STR_PAD_LEFT); // offset in mins
 
         $timezone = array(
             'id' => $identifier,
             'name' => str_replace('_', ' ', isset($zone[1]) ? $zone[1] : $zone[0]),
             'offset' => (int)$offset,
-            'utc' => $offset_h . ":" . $offset_m . (isset($zone_info['isdst']) && $zone_info['isdst'] ? " DST" : ""),
+            'utc' => $offset_h . ':' . $offset_m . (isset($zone_info['isdst']) && $zone_info['isdst'] ? ' DST' : ''),
             'zone' => $zone
         );
 
@@ -401,5 +398,42 @@ class Date
             }
         }
         return $arr1;
+    }
+
+    /**
+     * Retrieves an instance of DateTime
+     *
+     * @param string|int $date The date or timestamp
+     * @param DateTimeZone $timezone The timezone
+     * @return DateTime
+     */
+    private function dateTime($date = null, DateTimeZone $timezone = null)
+    {
+        // Create the DateTime object from a string or Unix timestamp
+        $timestamp = null;
+        if (is_numeric($date)) {
+            $timestamp = $date;
+            $date = null;
+        }
+
+        $date_time = new DateTime($date, $timezone);
+
+        // Set a Unix timestamp as the date
+        if ($timestamp !== null) {
+            $date_time->setTimestamp($timestamp);
+        }
+
+        return $date_time;
+    }
+
+    /**
+     * Retrieves an istance of DateTimeZone
+     *
+     * @param string $timezone The timezone identifier
+     * @return DateTimeZone
+     */
+    private function dateTimeZone($timezone)
+    {
+        return new DateTimeZone($timezone);
     }
 }
