@@ -66,9 +66,10 @@ class DateTest extends PHPUnit_Framework_TestCase
      * @covers ::__construct
      * @covers ::cast
      * @covers ::format
-     * @covers ::setDefaultTimezone
      * @covers ::toTime
      * @covers ::setTimezone
+     * @covers ::dateTime
+     * @covers ::dateTimeZone
      *
      * @dataProvider castProvider
      */
@@ -102,7 +103,8 @@ class DateTest extends PHPUnit_Framework_TestCase
             array('2016-12-12 00:00:00', 'Y-m-d H:i:s', 'America/Los_Angeles', 'UTC', '2016-12-12 08:00:00'),
             array('2016-05-12 07:00:00', 'Y-m-d H:i:s', 'UTC', 'America/Los_Angeles', '2016-05-12 00:00:00'),
             array('2016-12-12 08:00:00', 'Y-m-d H:i:s', 'UTC', 'America/Los_Angeles', '2016-12-12 00:00:00'),
-            array(null, 'Y', 'UTC', 'UTC', date('Y'))
+            array(null, 'Y', 'UTC', 'UTC', date('Y')),
+            array('2016-12-12 05:00:00', 'Y-m-d H:i:s', null, null, '2016-12-12 05:00:00')
         );
     }
 
@@ -110,6 +112,7 @@ class DateTest extends PHPUnit_Framework_TestCase
      * @param string $startDate The start date
      * @param string $endDate The end date
      * @param array|null $formats The range formats
+     * @param string $timezone The start timezone
      * @param array $expected The expected output
      *
      * @covers ::__construct
@@ -117,12 +120,18 @@ class DateTest extends PHPUnit_Framework_TestCase
      * @covers ::format
      * @covers ::toTime
      * @covers ::mergeArrays
+     * @covers ::setTimezone
+     * @covers ::dateTime
+     * @covers ::dateTimeZone
      *
      * @dataProvider dateRangeProvider
      */
-    public function testDateRange($startDate, $endDate, $formats, $expected)
+    public function testDateRange($startDate, $endDate, $formats, $timezone, $expected)
     {
         $date = $this->getDate();
+
+        // Set the 'from' timezone
+        $date->setTimezone($timezone);
 
         $this->assertEquals($expected, $date->dateRange($startDate, $endDate, $formats));
     }
@@ -144,14 +153,29 @@ class DateTest extends PHPUnit_Framework_TestCase
         );
 
         return array(
-            array('2016-03-01', '2017-03-01', null, 'March 1, 2016 - March 1, 2017'),
-            array('2016-02-02', '2016-02-03', null, 'February 2-3, 2016'),
-            array('2016-02-02', '2016-01-01', null, 'February 2 - January 1, 2016'),
-            array('2016-02-02', '2016-02-02', null, 'February 2, 2016'),
-            array('2016-03-01', '2017-03-01', $formats, '2016-03-01| March 1, 2017'),
-            array('2016-02-02', '2016-02-03', $formats, '02| 3, 2016'),
-            array('2016-02-02', '2016-01-01', $formats, '2016| January 1, 2016'),
-            array('2016-02-02', '2016-02-02', $formats, '2')
+            array('2016-03-01', '2017-03-01', null, null, 'March 1, 2016 - March 1, 2017'),
+            array('2016-02-02', '2016-02-03', null, null, 'February 2-3, 2016'),
+            array('2016-02-02', '2016-01-01', null, null, 'February 2 - January 1, 2016'),
+            array('2016-02-02', '2016-02-02', null, null, 'February 2, 2016'),
+            array('2016-03-01', '2017-03-01', $formats, null, '2016-03-01| March 1, 2017'),
+            array('2016-02-02', '2016-02-03', $formats, null, '02| 3, 2016'),
+            array('2016-02-02', '2016-01-01', $formats, null, '2016| January 1, 2016'),
+            array('2016-02-02', '2016-02-02', $formats, null, '2'),
+            array(1483228800, 1514764800, null, 'UTC', 'January 1, 2017 - January 1, 2018'),
+            array(1483228800, '2017-01-01', null, 'UTC', 'January 1, 2017'),
+            array(1483228800, '2017-01-03', null, 'UTC', 'January 1-3, 2017'),
+            array(1483228800, '2017-02-02', null, 'UTC', 'January 1 - February 2, 2017'),
+            array(1483228800, 1514764800, null, 'America/Los_Angeles', 'December 31, 2016 - December 31, 2017'),
+            array(1483228800, '2017-01-01', null, 'America/Los_Angeles', 'December 31, 2016 - January 1, 2017'),
+            array(1483228800, '2017-01-03', null, 'America/Los_Angeles', 'December 31, 2016 - January 3, 2017'),
+            array(1483228800, '2017-02-02', null, 'America/Los_Angeles', 'December 31, 2016 - February 2, 2017'),
+            array(
+                1483228800,
+                '2017-02-02T00:00:00-08:00',
+                null,
+                'America/Los_Angeles',
+                'December 31, 2016 - February 2, 2017'
+            )
         );
     }
 
@@ -192,16 +216,23 @@ class DateTest extends PHPUnit_Framework_TestCase
      * @param int $end End month
      * @param string $keyFormat Array key format
      * @param string $valueFormat Array value format
+     * @param string $timezone The timezone
      * @param array $expected Expected result
      *
      * @covers ::__construct
      * @covers ::getMonths
+     * @covers ::setTimezone
+     * @covers ::dateTime
+     * @covers ::dateTimeZone
      *
      * @dataProvider monthsProvider
      */
-    public function testGetMonths($start, $end, $keyFormat, $valueFormat, array $expected)
+    public function testGetMonths($start, $end, $keyFormat, $valueFormat, $timezone, array $expected)
     {
         $date = $this->getDate();
+
+        // Set the 'from' timezone
+        $date->setTimezone($timezone);
 
         $this->assertEquals($expected, $date->getMonths($start, $end, $keyFormat, $valueFormat));
     }
@@ -215,7 +246,7 @@ class DateTest extends PHPUnit_Framework_TestCase
     {
         return array(
             array(
-                1, 12, 'm', 'n',
+                1, 12, 'm', 'n', null,
                 array(
                     '01' => '1',
                     '02' => '2',
@@ -231,8 +262,42 @@ class DateTest extends PHPUnit_Framework_TestCase
                     '12' => '12'
                 )
             ),
-            array(3, 3, 'n', 'n', array('3' => '3')),
-            array(4, 3, 'n', 'n', array())
+            array(
+                1, 24, 'm', 'n', 'UTC',
+                array(
+                    '01' => '1',
+                    '02' => '2',
+                    '03' => '3',
+                    '04' => '4',
+                    '05' => '5',
+                    '06' => '6',
+                    '07' => '7',
+                    '08' => '8',
+                    '09' => '9',
+                    '10' => '10',
+                    '11' => '11',
+                    '12' => '12'
+                )
+            ),
+            array(3, 3, 'n', 'n', null, array('3' => '3')),
+            array(4, 3, 'n', 'n', 'UTC', array()),
+            array(
+                1, 12, 'm', 'n', 'America/Los_Angeles',
+                array(
+                    '01' => '1',
+                    '02' => '2',
+                    '03' => '3',
+                    '04' => '4',
+                    '05' => '5',
+                    '06' => '6',
+                    '07' => '7',
+                    '08' => '8',
+                    '09' => '9',
+                    '10' => '10',
+                    '11' => '11',
+                    '12' => '12'
+                )
+            )
         );
     }
 
@@ -245,12 +310,18 @@ class DateTest extends PHPUnit_Framework_TestCase
      *
      * @covers ::__construct
      * @covers ::getYears
+     * @covers ::setTimezone
+     * @covers ::dateTime
+     * @covers ::dateTimeZone
      *
      * @dataProvider yearsProvider
      */
-    public function testGetYears($start, $end, $keyFormat, $valueFormat, array $expected)
+    public function testGetYears($start, $end, $keyFormat, $valueFormat, $timezone, array $expected)
     {
         $date = $this->getDate();
+
+        // Set the 'from' timezone
+        $date->setTimezone($timezone);
 
         $this->assertEquals($expected, $date->getYears($start, $end, $keyFormat, $valueFormat));
     }
@@ -264,7 +335,7 @@ class DateTest extends PHPUnit_Framework_TestCase
     {
         return array(
             array(
-                2001, 2012, 'y', 'Y',
+                2001, 2012, 'y', 'Y', null,
                 array(
                     '01' => '2001',
                     '02' => '2002',
@@ -280,8 +351,25 @@ class DateTest extends PHPUnit_Framework_TestCase
                     '12' => '2012'
                 )
             ),
-            array(2003, 2003, 'Y', 'Y', array('2003' => '2003')),
-            array(2004, 2003, 'y', 'y', array())
+            array(2003, 2003, 'Y', 'Y', null, array('2003' => '2003')),
+            array(2004, 2003, 'y', 'y', 'UTC', array()),
+            array(
+                2001, 2012, 'y', 'Y', 'America/Los_Angeles',
+                array(
+                    '01' => '2001',
+                    '02' => '2002',
+                    '03' => '2003',
+                    '04' => '2004',
+                    '05' => '2005',
+                    '06' => '2006',
+                    '07' => '2007',
+                    '08' => '2008',
+                    '09' => '2009',
+                    '10' => '2010',
+                    '11' => '2011',
+                    '12' => '2012'
+                )
+            ),
         );
     }
 
