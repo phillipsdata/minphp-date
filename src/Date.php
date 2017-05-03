@@ -103,6 +103,27 @@ class Date
     }
 
     /**
+     * Modifies and formats a date using one of the date formats provided to the constructor,
+     * or predefined in this class.
+     *
+     * @param string $date The date string to cast into another format, also handles Unix time stamps
+     * @param string $modifier The strtotime-compatible timestamp modifier to adjust the given $date by
+     *  e.g. '+1 year'
+     * @param string $format A predefined date format in Date::$formats, a Date constant, or a date string.
+     * @return string The date modified and formatted using the given format rule, null on error
+     */
+    public function modify($date, $modifier, $format = 'date')
+    {
+        // Update the date timestamp with the given modifier
+        $timezone = ($this->timezone_from ? $this->dateTimeZone($this->timezone_from) : null);
+        $dateTime = $this->dateTime($date, $timezone);
+        $dateTime->modify($modifier);
+
+        // Include the timezone in the date so we don't doubly-convert the timezone
+        return $this->cast($dateTime->format('c'), $format);
+    }
+
+    /**
      * Format two dates to represent a range between them.
      *
      * @param string $start The start date
