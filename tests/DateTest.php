@@ -11,6 +11,8 @@ class DateTest extends PHPUnit_Framework_TestCase
 {
     /**
      * @covers ::__construct
+     * @uses \Minphp\Date\Date::setFormats
+     * @uses \Minphp\Date\Date::setTimezone
      */
     public function testConstruct()
     {
@@ -19,6 +21,7 @@ class DateTest extends PHPUnit_Framework_TestCase
 
     /**
      * @covers ::__construct
+     * @uses \Minphp\Date\Date::setFormats
      * @covers ::setTimezone
      */
     public function testSetTimezone()
@@ -32,6 +35,7 @@ class DateTest extends PHPUnit_Framework_TestCase
      * @param array|null The formats to set
      *
      * @covers ::__construct
+     * @uses \Minphp\Date\Date::setTimezone
      * @covers ::setFormats
      *
      * @dataProvider formatProvider
@@ -64,6 +68,7 @@ class DateTest extends PHPUnit_Framework_TestCase
      * @param string $expected The expected result
      *
      * @covers ::__construct
+     * @uses \Minphp\Date\Date::setFormats
      * @covers ::cast
      * @covers ::format
      * @covers ::toTime
@@ -109,6 +114,83 @@ class DateTest extends PHPUnit_Framework_TestCase
     }
 
     /**
+     * @param string $fromDate The date to convert
+     * @param string $modifier The strtotime-compatible modifier (e.g. +1 month)
+     * @param string $format The format of the converted date to fetch
+     * @param string $fromTimezone The $fromDate's timezone
+     * @param string $toTimezone The timezone to convert to
+     * @param string $expected The expected result
+     *
+     * @covers ::__construct
+     * @uses \Minphp\Date\Date::setFormats
+     * @covers ::modify
+     * @covers ::cast
+     * @covers ::format
+     * @covers ::toTime
+     * @covers ::setTimezone
+     * @covers ::dateTime
+     * @covers ::dateTimeZone
+     *
+     * @dataProvider modifyProvider
+     */
+    public function testModify($fromDate, $modifier, $format, $fromTimezone, $toTimezone, $expected)
+    {
+        $date = $this->getDate();
+
+        $date->setTimezone($fromTimezone, $toTimezone);
+
+        $this->assertEquals($expected, $date->modify($fromDate, $modifier, $format));
+    }
+
+    /**
+     * Data provider for ::testModify
+     *
+     * @return array
+     */
+    public function modifyProvider()
+    {
+        return array(
+            array('2016-05-12T00:00:00+00:00', '+1 second', 'Y-m-d H:i:s', 'UTC', 'UTC', '2016-05-12 00:00:01'),
+            array('2016-05-12T00:00:00+00:00', '+1 minute', 'Y-m-d H:i:s', 'UTC', 'UTC', '2016-05-12 00:01:00'),
+            array('2016-05-12T00:00:00+00:00', '+1 hour', 'Y-m-d H:i:s', 'UTC', 'UTC', '2016-05-12 01:00:00'),
+            array('2016-05-12T00:00:00+00:00', '+1 day', 'Y-m-d H:i:s', 'UTC', 'UTC', '2016-05-13 00:00:00'),
+            array('2016-05-12T00:00:00+00:00', '+1 week', 'Y-m-d H:i:s', 'UTC', 'UTC', '2016-05-19 00:00:00'),
+            array('2016-05-12T00:00:00+00:00', '+1 month', 'Y-m-d H:i:s', 'UTC', 'UTC', '2016-06-12 00:00:00'),
+            array('2016-06-12T00:00:00+00:00', '+1 month', 'Y-m-d H:i:s', 'UTC', 'UTC', '2016-07-12 00:00:00'),
+            array('2016-05-12T00:00:00+00:00', '+1 year', 'Y-m-d H:i:s', 'UTC', 'UTC', '2017-05-12 00:00:00'),
+            array(
+                '2016-05-12 00:00:00',
+                '+2 days -1 second',
+                'Y-m-d H:i:s',
+                'America/Los_Angeles',
+                'UTC',
+                '2016-05-14 06:59:59'
+            ),
+            array(null, 'May 10, 2017 midnight', 'c', 'America/Los_Angeles', 'UTC', '2017-05-10T07:00:00+00:00'),
+            array(null, 'May 10, 2017 midnight', 'c', 'UTC', 'America/Los_Angeles', '2017-05-09T17:00:00-07:00'),
+            array(
+                '2016-05-12T00:00:00+00:00',
+                'yesterday',
+                'Y-m-d H:i:s',
+                'UTC',
+                'America/Los_Angeles',
+                '2016-05-10 17:00:00'
+            ),
+            // Timezone in date takes precedence over the from_timezone of America/Los_Angeles
+           array(
+                '2016-05-12T00:00:00+00:00',
+                '-7 day',
+                'M d, Y H:i O',
+                'America/Los_Angeles',
+                'America/Los_Angeles',
+                'May 04, 2016 17:00 -0700'
+            ),
+            // 1 month is 30 days, not next numerical month
+            array('2016-01-31', '+1 month', 'Y-m-d H:i:s', 'UTC', 'America/Los_Angeles', '2016-03-01 16:00:00')
+        );
+    }
+
+    /**
      * @param string $startDate The start date
      * @param string $endDate The end date
      * @param array|null $formats The range formats
@@ -116,6 +198,7 @@ class DateTest extends PHPUnit_Framework_TestCase
      * @param array $expected The expected output
      *
      * @covers ::__construct
+     * @uses \Minphp\Date\Date::setFormats
      * @covers ::dateRange
      * @covers ::format
      * @covers ::toTime
@@ -184,6 +267,8 @@ class DateTest extends PHPUnit_Framework_TestCase
      * @param int $expected Expected output
      *
      * @covers ::__construct
+     * @uses \Minphp\Date\Date::setFormats
+     * @uses \Minphp\Date\Date::setTimezone
      * @covers ::toTime
      *
      * @dataProvider timeProvider
@@ -220,6 +305,7 @@ class DateTest extends PHPUnit_Framework_TestCase
      * @param array $expected Expected result
      *
      * @covers ::__construct
+     * @uses \Minphp\Date\Date::setFormats
      * @covers ::getMonths
      * @covers ::setTimezone
      * @covers ::dateTime
@@ -309,6 +395,7 @@ class DateTest extends PHPUnit_Framework_TestCase
      * @param array $expected Expected result
      *
      * @covers ::__construct
+     * @uses \Minphp\Date\Date::setFormats
      * @covers ::getYears
      * @covers ::setTimezone
      * @covers ::dateTime
@@ -375,11 +462,13 @@ class DateTest extends PHPUnit_Framework_TestCase
 
     /**
      * @covers ::__construct
+     * @uses \Minphp\Date\Date::setFormats
+     * @uses \Minphp\Date\Date::setTimezone
      * @covers ::getTimezones
      * @covers ::timezoneFromIdentifier
      * @covers ::insertSortInsert
      * @covers ::insertionSort
-     * @uses DateTimeZone
+     * @covers ::dateTimeZone
      *
      * @dataProvider timezoneProvider
      */
