@@ -133,7 +133,22 @@ $date = new Date(null, 'America/New_York', 'America/Los_Angeles');
 
 // Convert date from New York to Los Angeles time
 $unformattedDate = '2001-09-11 08:46:40';
-$formattedDate = $date->cast($unformattedDate, 'date_time'); // Sep 11, 2001 5:46:40 AM
+$formattedDate = $date->cast($unformattedDate, 'date_time'); // Sep 11, 01 5:46:40 AM
+```
+
+### Modifying and Formatting a Date
+
+A date can be modified by adding/subtracting time using the strtotime-compatible [Date and Time formats](http://php.net/manual/en/datetime.formats.php).
+
+The date returned is also formatted according to [Formatting a Date](#formatting-a-date).
+
+```php
+use \Minphp\Date\Date;
+
+$date = new Date(null, 'America/New_York', 'Asia/Tokyo');
+
+$unformattedDate = '1945-08-05 19:16:02';
+$formattedDate = $date->modify($unformattedDate, '+3 days +3 hours -14 minutes', 'date_time'); // Aug 09, 45 11:02:02 AM
 ```
 
 ### Retrieving a Date Range
