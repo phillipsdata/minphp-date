@@ -114,12 +114,40 @@ class Date
      */
     public function modify($date, $modifier, $format = 'date')
     {
-        // Update the date timestamp with the given modifier
-        $timezone = ($this->timezone_from ? $this->dateTimeZone($this->timezone_from) : null);
-        $dateTime = $this->dateTime($date, $timezone);
+        $tzFrom = ($this->timezone_from ? $this->dateTimeZone($this->timezone_from) : null);
+        $tzTo = ($this->timezone_from ? $this->dateTimeZone($this->timezone_to) : null);
+
+        $dateTime = $this->dateTime($date, $tzFrom);
+
+        $offset = 0;
+        $dst = ['before' => null, 'after' => null];
+        if ($tzTo) {
+            $trans = $tzTo->getTransitions($this->toTime($dateTime->format('c')), $this->toTime($dateTime->format('c')));
+
+            if (isset($trans[0]['offset'])) {
+                $offset = $trans[0]['offset'];
+                $dst['before'] = $trans[0]['isdst'];
+
+            }
+        }
+
         $dateTime->modify($modifier);
 
-        // Include the timezone in the date so we don't doubly-convert the timezone
+        if ($tzTo) {
+            $trans = $tzTo->getTransitions($this->toTime($dateTime->format('c')), $this->toTime($dateTime->format('c')));
+
+            if (isset($trans[0]['offset'])) {
+                $offset -= $trans[0]['offset'];
+                $dst['after'] = $trans[0]['isdst'];
+            }
+        }
+
+        $dateTime->setTimezone($tzTo);
+
+        if ($dst['before'] !== null && $dst['after'] !== null && $dst['after'] !== $dst['before']) {
+            $dateTime->modify($offset . ' seconds');
+        }
+
         return $this->cast($dateTime->format('c'), $format);
     }
 
