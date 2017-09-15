@@ -252,6 +252,12 @@ class DateTest extends PHPUnit_Framework_TestCase
             array('2016-10-12T00:00:00', '+1 month', 'c', 'Europe/Paris', 'UTC', '2016-11-11T23:00:00+00:00'),
             array('2016-10-12T00:00:00Z', '+1 month', 'c', 'Europe/Paris', 'UTC', '2016-11-12T00:00:00+00:00'),
             // Crossover timezone between daylight savings
+            array('2016-03-13 00:00:00', '+1 hour', 'c', 'America/Los_Angeles', 'America/Los_Angeles', '2016-03-13T01:00:00-08:00'),
+            array('2016-03-13 01:00:00', '+1 hour', 'c', 'America/Los_Angeles', 'America/Los_Angeles', '2016-03-13T03:00:00-07:00'),
+            array('2016-03-13 02:00:00', '+1 hour', 'c', 'America/Los_Angeles', 'America/Los_Angeles', '2016-03-13T04:00:00-07:00'),
+            array('2016-11-06 00:00:00', '+1 hour', 'c', 'America/Los_Angeles', 'America/Los_Angeles', '2016-11-06T01:00:00-07:00'),
+            array('2016-11-06 01:00:00', '+1 hour', 'c', 'America/Los_Angeles', 'America/Los_Angeles', '2016-11-06T03:00:00-08:00'),
+            array('2016-11-06 02:00:00', '+1 hour', 'c', 'America/Los_Angeles', 'America/Los_Angeles', '2016-11-06T03:00:00-08:00'),
             array('2016-03-12T00:00:00-08:00', '+1 month', 'Y-m-d H:i:s', 'America/Los_Angeles', 'America/Los_Angeles', '2016-04-12 00:00:00'),
             array('2016-10-12T00:00:00-07:00', '+1 month', 'Y-m-d H:i:s', 'America/Los_Angeles', 'America/Los_Angeles', '2016-11-12 00:00:00'),
             array('2016-03-12T00:00:00-08:00', '+1 month', 'c', 'America/Los_Angeles', 'America/Los_Angeles', '2016-04-12T00:00:00-07:00'),
@@ -267,10 +273,14 @@ class DateTest extends PHPUnit_Framework_TestCase
             array('2016-03-12T00:00:00+08:00', '+1 month', 'Y-m-d H:i:s', 'Australia/Perth', 'Australia/Perth', '2016-04-12 00:00:00'),
             array('2016-03-12T00:00:00-10:00', '+1 month', 'Y-m-d H:i:s', 'Pacific/Honolulu', 'Pacific/Honolulu', '2016-04-12 00:00:00'),
             // Between different timezones
+            array('2016-05-05 00:00:00', '+1 hour', 'c', 'Australia/Perth', 'Africa/Cairo', '2016-05-04T19:00:00+02:00'),
+            array('2016-05-05 00:00:00', '-6 hours', 'c', 'Africa/Cairo', 'Australia/Perth', '2016-05-05T00:00:00+08:00'),
+            array('2016-05-05 00:00:00Z', '+1 day', 'c', 'Africa/Cairo', 'Australia/Perth', '2016-05-06T08:00:00+08:00'),
             array('2016-06-06T06:00:00+02:00', '+1 month', 'c', 'Europe/Paris', 'America/Los_Angeles', '2016-07-05T21:00:00-07:00'),
             array('2016-07-05T21:00:00-07:00', '-1 month', 'c', 'America/Los_Angeles', 'Europe/Paris', '2016-06-06T06:00:00+02:00'),
             array('2016-10-12T00:00:00', '+1 month', 'c', 'Europe/Paris', 'America/Los_Angeles', '2016-11-11T16:00:00-08:00'),
             array('2016-10-12T00:00:00', '+1 month', 'c', 'America/Los_Angeles', 'Australia/Sydney', '2016-11-12T19:00:00+11:00'),
+            array('2016-11-12T19:00:00+11:00', '+0 hours', 'c', 'Australia/Sydney', 'America/Los_Angeles', '2016-11-12T00:00:00-08:00'),
         );
     }
 
