@@ -265,6 +265,7 @@ class DateTest extends PHPUnit_Framework_TestCase
             array('2016-09-12T00:00:00+10:00', '+1 month', 'Y-m-d H:i:s', 'Australia/Sydney', 'Australia/Sydney', '2016-10-12 00:00:00'),
             array('2016-03-12T00:00:00+01:00', '+1 month', 'Y-m-d H:i:s', 'Europe/Paris', 'Europe/Paris', '2016-04-12 00:00:00'),
             array('2016-10-12T00:00:00+02:00', '+1 month', 'Y-m-d H:i:s', 'Europe/Paris', 'Europe/Paris', '2016-11-12 00:00:00'),
+            array('2016-10-12T00:00:00+02:00', '+1 year', 'Y-m-d H:i:s', 'Europe/Paris', 'Europe/Paris', '2017-10-12 00:00:00'),
             // No daylight savings observed
             array('2016-03-12T00:00:00+00:00', '+1 month', 'Y-m-d H:i:s', 'UTC', 'UTC', '2016-04-12 00:00:00'),
             array('2016-03-12T00:00:00-08:00', '+1 month', 'Y-m-d H:i:s', 'UTC', 'UTC', '2016-04-12 08:00:00'),
@@ -272,15 +273,63 @@ class DateTest extends PHPUnit_Framework_TestCase
             array('2016-03-12T00:00:00+02:00', '+1 month', 'Y-m-d H:i:s', 'Africa/Cairo', 'Africa/Cairo', '2016-04-12 00:00:00'),
             array('2016-03-12T00:00:00+08:00', '+1 month', 'Y-m-d H:i:s', 'Australia/Perth', 'Australia/Perth', '2016-04-12 00:00:00'),
             array('2016-03-12T00:00:00-10:00', '+1 month', 'Y-m-d H:i:s', 'Pacific/Honolulu', 'Pacific/Honolulu', '2016-04-12 00:00:00'),
-            // Between different timezones
+            // Between timezones
             array('2016-05-05 00:00:00', '+1 hour', 'c', 'Australia/Perth', 'Africa/Cairo', '2016-05-04T19:00:00+02:00'),
+            array('2016-05-04T19:00:00+02:00', '-1 hour', 'c', 'Africa/Cairo', 'Australia/Perth', '2016-05-05T00:00:00+08:00'),
             array('2016-05-05 00:00:00', '-6 hours', 'c', 'Africa/Cairo', 'Australia/Perth', '2016-05-05T00:00:00+08:00'),
             array('2016-05-05 00:00:00Z', '+1 day', 'c', 'Africa/Cairo', 'Australia/Perth', '2016-05-06T08:00:00+08:00'),
+            array('2016-05-05T00:00:00+02:00', '+1 month', 'c', 'Africa/Cairo', 'Australia/Perth', '2016-06-05T06:00:00+08:00'),
             array('2016-06-06T06:00:00+02:00', '+1 month', 'c', 'Europe/Paris', 'America/Los_Angeles', '2016-07-05T21:00:00-07:00'),
             array('2016-07-05T21:00:00-07:00', '-1 month', 'c', 'America/Los_Angeles', 'Europe/Paris', '2016-06-06T06:00:00+02:00'),
-            array('2016-10-12T00:00:00', '+1 month', 'c', 'Europe/Paris', 'America/Los_Angeles', '2016-11-11T16:00:00-08:00'),
-            array('2016-10-12T00:00:00', '+1 month', 'c', 'America/Los_Angeles', 'Australia/Sydney', '2016-11-12T19:00:00+11:00'),
             array('2016-11-12T19:00:00+11:00', '+0 hours', 'c', 'Australia/Sydney', 'America/Los_Angeles', '2016-11-12T00:00:00-08:00'),
+            array('2016-03-12 00:00:00', '+1 month', 'c', 'Australia/Perth', 'Africa/Cairo', '2016-04-11T18:00:00+02:00'),
+            array('2016-03-12T00:00:00+08:00', '+1 month', 'c', 'Australia/Perth', 'Africa/Cairo', '2016-04-11T18:00:00+02:00'),
+            array('2016-04-11T18:00:00+02:00', '-1 month', 'Y-m-d H:i:s', 'Africa/Cairo', 'Australia/Perth', '2016-03-12 00:00:00'),
+            array('2016-04-11 18:00:00', '-1 month', 'Y-m-d H:i:s', 'Africa/Cairo', 'Australia/Perth', '2016-03-12 00:00:00'),
+            // Between timezones that both cross daylight savings
+        array('2016-10-12 00:00:00', '+1 month', 'c', 'Europe/Paris', 'America/Los_Angeles', '2016-11-11T15:00:00-08:00'),
+            array('2016-10-12T00:00:00+02:00', '+1 month', 'c', 'Europe/Paris', 'America/Los_Angeles', '2016-11-11T15:00:00-08:00'),
+            array('2016-11-11T15:00:00-08:00', '-1 month', 'Y-m-d H:i:s', 'America/Los_Angeles', 'Europe/Paris', '2016-10-12 00:00:00'),
+        array('2016-11-11 15:00:00', '-1 month', 'Y-m-d H:i:s', 'America/Los_Angeles', 'Europe/Paris', '2016-10-12 00:00:00'),
+
+        array('2016-10-12 00:00:00', '+1 month', 'c', 'America/Los_Angeles', 'America/New_York', '2016-11-12T03:00:00-05:00'),
+            array('2016-10-12T00:00:00-07:00', '+1 month', 'c', 'America/Los_Angeles', 'America/New_York', '2016-11-12T03:00:00-05:00'),
+            array('2016-11-12T03:00:00-05:00', '-1 month', 'Y-m-d H:i:s', 'America/New_York', 'America/Los_Angeles', '2016-10-12 00:00:00'),
+        array('2016-11-12 03:00:00', '-1 month', 'Y-m-d H:i:s', 'America/New_York', 'America/Los_Angeles', '2016-10-12 00:00:00'),
+
+        array('2016-03-12 00:00:00', '+1 month', 'c', 'America/Los_Angeles', 'America/New_York', '2016-04-12T03:00:00-04:00'),
+            array('2016-03-12T00:00:00-08:00', '+1 month', 'c', 'America/Los_Angeles', 'America/New_York', '2016-04-12T03:00:00-04:00'),
+            array('2016-04-12T03:00:00-04:00', '-1 month', 'Y-m-d H:i:s', 'America/New_York', 'America/Los_Angeles', '2016-03-12 00:00:00'),
+        array('2016-04-12 03:00:00', '-1 month', 'Y-m-d H:i:s', 'America/New_York', 'America/Los_Angeles', '2016-03-12 00:00:00'),
+
+        array('2016-03-12 00:00:00', '+1 month', 'c', 'Australia/Sydney', 'Europe/Paris', '2016-04-11T16:00:00+02:00'),
+        array('2016-03-12T00:00:00+11:00', '+1 month', 'c', 'Australia/Sydney', 'Europe/Paris', '2016-04-11T16:00:00+02:00'),
+            array('2016-04-11T16:00:00+02:00', '-1 month', 'Y-m-d H:i:s', 'Europe/Paris', 'Australia/Sydney', '2016-03-12 00:00:00'),
+        array('2016-04-11 16:00:00', '-1 month', 'Y-m-d H:i:s', 'Europe/Paris', 'Australia/Sydney', '2016-03-12 00:00:00'),
+
+
+            // Between a timezone crossing daylight savings and another that doesn't
+            array('2016-10-12 00:00:00', '+1 month', 'c', 'America/Los_Angeles', 'UTC', '2016-11-12T08:00:00+00:00'),
+        array('2016-10-12T00:00:00-07:00', '+1 month', 'c', 'America/Los_Angeles', 'UTC', '2016-11-12T08:00:00+00:00'),
+            array('2016-11-12T08:00:00+00:00', '-1 month', 'Y-m-d H:i:s', 'UTC', 'America/Los_Angeles', '2016-10-12 00:00:00'),
+            array('2016-11-12 08:00:00', '-1 month', 'Y-m-d H:i:s', 'UTC', 'America/Los_Angeles', '2016-10-12 00:00:00'),
+
+        array('2016-09-12 00:00:00', '+1 month', 'c', 'America/Los_Angeles', 'Australia/Sydney', '2016-10-12T18:00:00+11:00'),
+        array('2016-09-12T00:00:00-07:00', '+1 month', 'c', 'America/Los_Angeles', 'Australia/Sydney', '2016-10-12T18:00:00+11:00'),
+            array('2016-10-12T18:00:00+11:00', '-1 month', 'c', 'Australia/Sydney', 'America/Los_Angeles', '2016-09-12T00:00:00-07:00'),
+        array('2016-10-12 18:00:00', '-1 month', 'c', 'Australia/Sydney', 'America/Los_Angeles', '2016-09-12T00:00:00-07:00'),
+
+            array('2016-03-12 00:00:00', '+1 month', 'c', 'Australia/Sydney', 'Australia/Perth', '2016-04-11T22:00:00+08:00'),
+        array('2016-03-12T00:00:00+11:00', '+1 month', 'c', 'Australia/Sydney', 'Australia/Perth', '2016-04-11T22:00:00+08:00'),
+            array('2016-04-11T22:00:00+08:00', '-1 month', 'Y-m-d H:i:s', 'Australia/Perth', 'Australia/Sydney', '2016-03-12 00:00:00'),
+            array('2016-04-11 22:00:00', '-1 month', 'Y-m-d H:i:s', 'Australia/Perth', 'Australia/Sydney', '2016-03-12 00:00:00'),
+
+        array('2016-03-12 00:00:00', '+1 month', 'c', 'Australia/Perth', 'Australia/Sydney', '2016-04-12T02:00:00+10:00'),
+        array('2016-03-12T00:00:00+08:00', '+1 month', 'c', 'Australia/Perth', 'Australia/Sydney', '2016-04-12T02:00:00+10:00'),
+            array('2016-04-12T02:00:00+10:00', '-1 month', 'Y-m-d H:i:s', 'Australia/Sydney', 'Australia/Perth', '2016-03-12 00:00:00'),
+        array('2016-04-12 02:00:00', '-1 month', 'Y-m-d H:i:s', 'Australia/Sydney', 'Australia/Perth', '2016-03-12 00:00:00'),
+
+
         );
     }
 

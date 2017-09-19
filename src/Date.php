@@ -115,37 +115,41 @@ class Date
     public function modify($date, $modifier, $format = 'date')
     {
         $tzFrom = ($this->timezone_from ? $this->dateTimeZone($this->timezone_from) : null);
-        $tzTo = ($this->timezone_from ? $this->dateTimeZone($this->timezone_to) : null);
+        $tzTo = ($this->timezone_to ? $this->dateTimeZone($this->timezone_to) : null);
 
         $dateTime = $this->dateTime($date, $tzFrom);
 
-        $offset = 0;
-        $dst = ['before' => null, 'after' => null];
-        if ($tzTo) {
-            $trans = $tzTo->getTransitions($this->toTime($dateTime->format('c')), $this->toTime($dateTime->format('c')));
-
-            if (isset($trans[0]['offset'])) {
-                $offset = $trans[0]['offset'];
-                $dst['before'] = $trans[0]['isdst'];
-
-            }
-        }
+        $fromDate = $this->toTime($dateTime->format('c'));
 
         $dateTime->modify($modifier);
+        $dateTime->setTimezone($tzFrom);
+        $toOffset = $dateTime->getOffset();
 
-        if ($tzTo) {
-            $trans = $tzTo->getTransitions($this->toTime($dateTime->format('c')), $this->toTime($dateTime->format('c')));
+        $toDate = $this->toTime($dateTime->format('c'));
 
-            if (isset($trans[0]['offset'])) {
-                $offset -= $trans[0]['offset'];
-                $dst['after'] = $trans[0]['isdst'];
-            }
+        $offsetFrom = 0;
+        $offsetTo = 0;
+        $fromDstChanged = false;
+        $fromDst = null;
+
+        if (($trans = $tzFrom->getTransitions($fromDate, $fromDate)) && !empty($trans[0])) {
+            $offsetFrom += $trans[0]['offset'];
+            $fromDst = $trans[0]['isdst'];
+        }
+        if (($trans = $tzFrom->getTransitions($toDate, $toDate)) && !empty($trans[0])) {
+            $offsetFrom -= $trans[0]['offset'];
+            $fromDstChanged = ($fromDst !== null && $trans[0]['isdst'] !== $fromDst);
         }
 
-        $dateTime->setTimezone($tzTo);
+        if (($trans = $tzTo->getTransitions($fromDate, $fromDate)) && !empty($trans[0])) {
+            $offsetTo += $trans[0]['offset'];
+        }
+        if (($trans = $tzTo->getTransitions($toDate, $toDate)) && !empty($trans[0])) {
+            $offsetTo -= $trans[0]['offset'];
+        }
 
-        if ($dst['before'] !== null && $dst['after'] !== null && $dst['after'] !== $dst['before']) {
-            $dateTime->modify($offset . ' seconds');
+        if ($offsetTo !== 0) {
+            $dateTime->modify($offsetTo . ' seconds');
         }
 
         return $this->cast($dateTime->format('c'), $format);
