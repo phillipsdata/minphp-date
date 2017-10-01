@@ -110,49 +110,36 @@ class Date
      * @param string $modifier The strtotime-compatible timestamp modifier to adjust the given $date by
      *  e.g. '+1 year'
      * @param string $format A predefined date format in Date::$formats, a Date constant, or a date string.
+     * @param string $relative_from_timezone The timezone that the $date originally represented if it differs
+     *  from the set 'from timezone'. Include a relative from timezone when the $date being modified may cross
+     *  daylight savings and the set 'from timezone' is different from the set 'to timezone', otherwise the
+     *  modified date may be off by the time change in daylight savings.
      * @return string The date modified and formatted using the given format rule, null on error
      */
-    public function modify($date, $modifier, $format = 'date')
+    public function modify($date, $modifier, $format = 'date', $relative_from_timezone = null)
     {
-        $tzFrom = ($this->timezone_from ? $this->dateTimeZone($this->timezone_from) : null);
-        $tzTo = ($this->timezone_to ? $this->dateTimeZone($this->timezone_to) : null);
+        // Get the from timezone
+        $tz_from = ($this->timezone_from ? $this->dateTimeZone($this->timezone_from) : null);
 
-        $dateTime = $this->dateTime($date, $tzFrom);
+        // If the given date is representative of a time in a different timezone_from, convert it first
+        if ($relative_from_timezone !== null && $relative_from_timezone !== $this->timezone_from) {
+            // Create the from timezone as the relative timezone
+            $tz_from = $this->dateTimeZone($relative_from_timezone);
 
-        $fromDate = $this->toTime($dateTime->format('c'));
-
-        $dateTime->modify($modifier);
-        $dateTime->setTimezone($tzFrom);
-        $toOffset = $dateTime->getOffset();
-
-        $toDate = $this->toTime($dateTime->format('c'));
-
-        $offsetFrom = 0;
-        $offsetTo = 0;
-        $fromDstChanged = false;
-        $fromDst = null;
-
-        if (($trans = $tzFrom->getTransitions($fromDate, $fromDate)) && !empty($trans[0])) {
-            $offsetFrom += $trans[0]['offset'];
-            $fromDst = $trans[0]['isdst'];
-        }
-        if (($trans = $tzFrom->getTransitions($toDate, $toDate)) && !empty($trans[0])) {
-            $offsetFrom -= $trans[0]['offset'];
-            $fromDstChanged = ($fromDst !== null && $trans[0]['isdst'] !== $fromDst);
+            // Set the from date (order of setting timezone matters)
+            $date_time = $this->dateTime($date);
+            $date_time->setTimezone($tz_from);
+        } else {
+            // Set the from date
+            $date_time = $this->dateTime($date, $tz_from);
         }
 
-        if (($trans = $tzTo->getTransitions($fromDate, $fromDate)) && !empty($trans[0])) {
-            $offsetTo += $trans[0]['offset'];
-        }
-        if (($trans = $tzTo->getTransitions($toDate, $toDate)) && !empty($trans[0])) {
-            $offsetTo -= $trans[0]['offset'];
-        }
+        // Modify the date from the from timezone
+        $modified_date = $this->dateTime($date_time->format('c'));
+        $modified_date->setTimezone($tz_from);
+        $modified_date->modify($modifier);
 
-        if ($offsetTo !== 0) {
-            $dateTime->modify($offsetTo . ' seconds');
-        }
-
-        return $this->cast($dateTime->format('c'), $format);
+        return $this->cast($modified_date->format('c'), $format);
     }
 
     /**
