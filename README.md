@@ -157,7 +157,7 @@ necessary if your from timezone differs from the relative timezone of the date y
 
 Consider:
 
-```
+```php
 use \Minphp\Date\Date;
 
 // Assume the from date is in UTC while we are converting to America/Los_Angeles (-8 hours standard time, or -7 hours daylight savings)
@@ -183,7 +183,7 @@ $date->modify('2016-10-15 07:00:00', '+1 month', 'Y-m-d H:i:s', 'America/Los_Ang
 
 Modifying dates with respect to one timezone will maintain a consistent time-of-day despite the daylight savings offset changing.
 
-```
+```php
 use \Minphp\Date\Date;
 
 $date = new Date(null, 'America/Los_Angeles', 'America/Los_Angeles');
