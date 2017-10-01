@@ -110,17 +110,36 @@ class Date
      * @param string $modifier The strtotime-compatible timestamp modifier to adjust the given $date by
      *  e.g. '+1 year'
      * @param string $format A predefined date format in Date::$formats, a Date constant, or a date string.
+     * @param string $relative_from_timezone The timezone that the $date originally represented if it differs
+     *  from the set 'from timezone'. Include a relative from timezone when the $date being modified may cross
+     *  daylight savings and the set 'from timezone' is different from the set 'to timezone', otherwise the
+     *  modified date may be off by the time change in daylight savings.
      * @return string The date modified and formatted using the given format rule, null on error
      */
-    public function modify($date, $modifier, $format = 'date')
+    public function modify($date, $modifier, $format = 'date', $relative_from_timezone = null)
     {
-        // Update the date timestamp with the given modifier
-        $timezone = ($this->timezone_from ? $this->dateTimeZone($this->timezone_from) : null);
-        $dateTime = $this->dateTime($date, $timezone);
-        $dateTime->modify($modifier);
+        // Get the from timezone
+        $tz_from = ($this->timezone_from ? $this->dateTimeZone($this->timezone_from) : null);
 
-        // Include the timezone in the date so we don't doubly-convert the timezone
-        return $this->cast($dateTime->format('c'), $format);
+        // If the given date is representative of a time in a different timezone_from, convert it first
+        if ($relative_from_timezone !== null && $relative_from_timezone !== $this->timezone_from) {
+            // Create the from timezone as the relative timezone
+            $tz_from = $this->dateTimeZone($relative_from_timezone);
+
+            // Set the from date (order of setting timezone matters)
+            $date_time = $this->dateTime($date);
+            $date_time->setTimezone($tz_from);
+        } else {
+            // Set the from date
+            $date_time = $this->dateTime($date, $tz_from);
+        }
+
+        // Modify the date from the from timezone
+        $modified_date = $this->dateTime($date_time->format('c'));
+        $modified_date->setTimezone($tz_from);
+        $modified_date->modify($modifier);
+
+        return $this->cast($modified_date->format('c'), $format);
     }
 
     /**

@@ -151,6 +151,47 @@ $unformattedDate = '1945-08-05 19:16:02';
 $formattedDate = $date->modify($unformattedDate, '+3 days +3 hours -14 minutes', 'date_time'); // Aug 09, 45 11:02:02 AM
 ```
 
+For dates that are modified such that they will cross daylight savings in either the from or to timezones,
+you should include a relative from timezone when you want to maintain a consistent time-of-day. This is
+necessary if your from timezone differs from the relative timezone of the date you are modifying across daylight savings.
+
+Consider:
+
+```
+use \Minphp\Date\Date;
+
+// Assume the from date is in UTC while we are converting to America/Los_Angeles (-8 hours standard time, or -7 hours daylight savings)
+$date = new Date(null, 'UTC', 'America/Los_Angeles');
+
+// This time represents midnight for America/Los_Angeles, but it is in UTC
+// (e.g. it came from our database which stores dates in UTC even though we may display dates in America/Los_Angeles)
+$time = '2016-03-01 08:00:00';
+
+// Modifying the date across daylight savings causes the daylight savings time offset change to affect the time-of-day by adding an hour
+$date->modify($time, '+1 month', 'Y-m-d H:i:s'); // 2016-04-01 01:00:00
+
+// To maintain a consistent time-of-day despite the daylight savings time offset, pass a relative from timezone as the fourth argument to ::modify
+// (this may typically be the same timezone as the to timezone)
+$date->modify($time, '+1 month', 'Y-m-d H:i:s', 'America/Los_Angeles'); // 2016-04-01 00:00:00
+
+// Similarly when daylight savings ends later in the year the offset changes the time-of-day by subtracting an hour
+$date->modify('2016-10-15 07:00:00', '+1 month', 'Y-m-d H:i:s'); // 2016-11-14 23:00:00
+
+// If a relative from timezone is set, then the time-of-day remains consistent
+$date->modify('2016-10-15 07:00:00', '+1 month', 'Y-m-d H:i:s', 'America/Los_Angeles'); // 2016-11-15 00:00:00
+```
+
+Modifying dates with respect to one timezone will maintain a consistent time-of-day despite the daylight savings offset changing.
+
+```
+use \Minphp\Date\Date;
+
+$date = new Date(null, 'America/Los_Angeles', 'America/Los_Angeles');
+
+$newDate = $date->modify('2016-03-01 12:00:00', '+6 months', 'Y-m-d H:i:s'); // 2016-09-01 12:00:00
+$date->modify($newDate, '+6 months', 'Y-m-d H:i:s'); // 2017-03-01 12:00:00
+```
+
 ### Retrieving a Date Range
 
 A set of months or years can be generated. The dates are created from the current server time in the defined [from timezone](#setting-timezones).

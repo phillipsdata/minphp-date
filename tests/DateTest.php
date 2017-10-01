@@ -120,6 +120,7 @@ class DateTest extends PHPUnit_Framework_TestCase
      * @param string $fromTimezone The $fromDate's timezone
      * @param string $toTimezone The timezone to convert to
      * @param string $expected The expected result
+     * @param string $relativeFromTz The relative from timezone of the $fromDate if it differs from $fromTimezone
      *
      * @covers ::__construct
      * @uses \Minphp\Date\Date::setFormats
@@ -133,22 +134,30 @@ class DateTest extends PHPUnit_Framework_TestCase
      *
      * @dataProvider modifyProvider
      */
-    public function testModify($fromDate, $modifier, $format, $fromTimezone, $toTimezone, $expected)
-    {
+    public function testModify(
+        $fromDate,
+        $modifier,
+        $format,
+        $fromTimezone,
+        $toTimezone,
+        $expected,
+        $relativeFromTz = null
+    ) {
         $date = $this->getDate();
 
         $date->setTimezone($fromTimezone, $toTimezone);
 
-        $this->assertEquals($expected, $date->modify($fromDate, $modifier, $format));
+        $this->assertEquals($expected, $date->modify($fromDate, $modifier, $format, $relativeFromTz));
     }
 
-    /**
-     * Data provider for ::testModify
-     *
-     * @return array
-     */
     public function modifyProvider()
     {
+        $tz = [
+            'la' => 'America/Los_Angeles',
+            'paris' => 'Europe/Paris',
+            'syd' => 'Australia/Sydney'
+        ];
+
         return array(
             array('2016-05-12T00:00:00+00:00', '+1 second', 'Y-m-d H:i:s', 'UTC', 'UTC', '2016-05-12 00:00:01'),
             array('2016-05-12T00:00:00+00:00', '+1 minute', 'Y-m-d H:i:s', 'UTC', 'UTC', '2016-05-12 00:01:00'),
@@ -158,35 +167,311 @@ class DateTest extends PHPUnit_Framework_TestCase
             array('2016-05-12T00:00:00+00:00', '+1 month', 'Y-m-d H:i:s', 'UTC', 'UTC', '2016-06-12 00:00:00'),
             array('2016-06-12T00:00:00+00:00', '+1 month', 'Y-m-d H:i:s', 'UTC', 'UTC', '2016-07-12 00:00:00'),
             array('2016-05-12T00:00:00+00:00', '+1 year', 'Y-m-d H:i:s', 'UTC', 'UTC', '2017-05-12 00:00:00'),
-            array(
-                '2016-05-12 00:00:00',
-                '+2 days -1 second',
-                'Y-m-d H:i:s',
-                'America/Los_Angeles',
-                'UTC',
-                '2016-05-14 06:59:59'
-            ),
-            array(null, 'May 10, 2017 midnight', 'c', 'America/Los_Angeles', 'UTC', '2017-05-10T07:00:00+00:00'),
-            array(null, 'May 10, 2017 midnight', 'c', 'UTC', 'America/Los_Angeles', '2017-05-09T17:00:00-07:00'),
-            array(
-                '2016-05-12T00:00:00+00:00',
-                'yesterday',
-                'Y-m-d H:i:s',
-                'UTC',
-                'America/Los_Angeles',
-                '2016-05-10 17:00:00'
-            ),
+            array('2016-05-12 00:00:00', '+2 days -1 second', 'Y-m-d H:i:s', $tz['la'], 'UTC', '2016-05-14 06:59:59'),
+            array(null, 'May 10, 2017 midnight', 'c', $tz['la'], 'UTC', '2017-05-10T07:00:00+00:00'),
+            array(null, 'May 10, 2017 midnight', 'c', 'UTC', $tz['la'], '2017-05-09T17:00:00-07:00'),
+            array('2016-05-12T00:00:00+00:00', 'yesterday', 'Y-m-d H:i:s', 'UTC', $tz['la'], '2016-05-10 17:00:00'),
             // Timezone in date takes precedence over the from_timezone of America/Los_Angeles
-           array(
+            array(
                 '2016-05-12T00:00:00+00:00',
                 '-7 day',
                 'M d, Y H:i O',
-                'America/Los_Angeles',
-                'America/Los_Angeles',
+                $tz['la'],
+                $tz['la'],
                 'May 04, 2016 17:00 -0700'
             ),
             // 1 month is 30 days, not next numerical month
-            array('2016-01-31', '+1 month', 'Y-m-d H:i:s', 'UTC', 'America/Los_Angeles', '2016-03-01 16:00:00')
+            array('2016-01-31', '+1 month', 'Y-m-d H:i:s', 'UTC', $tz['la'], '2016-03-01 16:00:00'),
+
+            // Convert between LA daylight savings
+            array('2016-03-05T00:00:00-08:00', '+1 month', 'c', $tz['la'], $tz['la'], '2016-04-05T00:00:00-07:00'),
+            array('2016-03-05T00:00:00-08:00', '+1 month', 'Y-m-d H:i:s', $tz['la'], $tz['la'], '2016-04-05 00:00:00'),
+            array('2016-03-05 00:00:00', '+1 month', 'c', $tz['la'], $tz['la'], '2016-04-05T00:00:00-07:00'),
+            array('2016-04-05T00:00:00-07:00', '-1 month', 'c', $tz['la'], $tz['la'], '2016-03-05T00:00:00-08:00'),
+            array('2016-04-05T00:00:00-07:00', '-1 month', 'Y-m-d H:i:s', $tz['la'], $tz['la'], '2016-03-05 00:00:00'),
+            array('2016-04-05 00:00:00', '-1 month', 'c', $tz['la'], $tz['la'], '2016-03-05T00:00:00-08:00'),
+
+            array('2016-10-15T00:00:00-07:00', '+1 month', 'c', $tz['la'], $tz['la'], '2016-11-15T00:00:00-08:00'),
+            array('2016-10-15T00:00:00-07:00', '+1 month', 'Y-m-d H:i:s', $tz['la'], $tz['la'], '2016-11-15 00:00:00'),
+            array('2016-10-15 00:00:00', '+1 month', 'c', $tz['la'], $tz['la'], '2016-11-15T00:00:00-08:00'),
+            array('2016-11-15T00:00:00-08:00', '-1 month', 'c', $tz['la'], $tz['la'], '2016-10-15T00:00:00-07:00'),
+            array('2016-11-15T00:00:00-08:00', '-1 month', 'Y-m-d H:i:s', $tz['la'], $tz['la'], '2016-10-15 00:00:00'),
+            array('2016-11-15 00:00:00', '-1 month', 'c', $tz['la'], $tz['la'], '2016-10-15T00:00:00-07:00'),
+
+            // Convert between LA and UTC across daylight savings
+            array('2016-03-05T00:00:00-08:00', '+1 month', 'c', $tz['la'], 'UTC', '2016-04-05T07:00:00+00:00'),
+            array('2016-03-05T00:00:00-08:00', '+1 month', 'Y-m-d H:i:s', $tz['la'], 'UTC', '2016-04-05 07:00:00'),
+            array('2016-03-05 00:00:00', '+1 month', 'c', $tz['la'], 'UTC', '2016-04-05T07:00:00+00:00'),
+            array('2016-04-05T00:00:00-07:00', '-1 month', 'c', $tz['la'], 'UTC', '2016-03-05T08:00:00+00:00'),
+            array('2016-04-05T00:00:00-07:00', '-1 month', 'Y-m-d H:i:s', $tz['la'], 'UTC', '2016-03-05 08:00:00'),
+            array('2016-04-05 00:00:00', '-1 month', 'c', $tz['la'], 'UTC', '2016-03-05T08:00:00+00:00'),
+
+            array('2016-10-15T00:00:00-07:00', '+1 month', 'c', $tz['la'], 'UTC', '2016-11-15T08:00:00+00:00'),
+            array('2016-10-15T00:00:00-07:00', '+1 month', 'Y-m-d H:i:s', $tz['la'], 'UTC', '2016-11-15 08:00:00'),
+            array('2016-10-15 00:00:00', '+1 month', 'c', $tz['la'], 'UTC', '2016-11-15T08:00:00+00:00'),
+            array('2016-11-15T00:00:00-08:00', '-1 month', 'c', $tz['la'], 'UTC', '2016-10-15T07:00:00+00:00'),
+            array('2016-11-15T00:00:00-08:00', '-1 month', 'Y-m-d H:i:s', $tz['la'], 'UTC', '2016-10-15 07:00:00'),
+            array('2016-11-15 00:00:00', '-1 month', 'c', $tz['la'], 'UTC', '2016-10-15T07:00:00+00:00'),
+
+            // Convert between UTC and LA across daylight savings
+            array('2016-03-05T00:00:00+00:00', '+1 month', 'c', 'UTC', $tz['la'], '2016-04-04T17:00:00-07:00'),
+            array('2016-03-05T00:00:00+00:00', '+1 month', 'Y-m-d H:i:s', 'UTC', $tz['la'], '2016-04-04 17:00:00'),
+            array('2016-03-05 00:00:00', '+1 month', 'c', 'UTC', $tz['la'], '2016-04-04T17:00:00-07:00'),
+            array('2016-04-05T00:00:00+00:00', '-1 month', 'c', 'UTC', $tz['la'], '2016-03-04T16:00:00-08:00'),
+            array('2016-04-05T00:00:00+00:00', '-1 month', 'Y-m-d H:i:s', 'UTC', $tz['la'], '2016-03-04 16:00:00'),
+            array('2016-04-05 00:00:00', '-1 month', 'c', 'UTC', $tz['la'], '2016-03-04T16:00:00-08:00'),
+
+            array('2016-10-15T00:00:00+00:00', '+1 month', 'c', 'UTC', $tz['la'], '2016-11-14T16:00:00-08:00'),
+            array('2016-10-15T00:00:00+00:00', '+1 month', 'Y-m-d H:i:s', 'UTC', $tz['la'], '2016-11-14 16:00:00'),
+            array('2016-10-15 00:00:00', '+1 month', 'c', 'UTC', $tz['la'], '2016-11-14T16:00:00-08:00'),
+            array('2016-11-15T00:00:00+00:00', '-1 month', 'c', 'UTC', $tz['la'], '2016-10-14T17:00:00-07:00'),
+            array('2016-11-15T00:00:00+00:00', '-1 month', 'Y-m-d H:i:s', 'UTC', $tz['la'], '2016-10-14 17:00:00'),
+            array('2016-11-15 00:00:00', '-1 month', 'c', 'UTC', $tz['la'], '2016-10-14T17:00:00-07:00'),
+
+            // Convert between LA and Sydney across daylight savings for both
+            array('2016-03-05T00:00:00-08:00', '+2 months', 'c', $tz['la'], $tz['syd'], '2016-05-05T17:00:00+10:00'),
+            array(
+                '2016-03-05T00:00:00-08:00',
+                '+2 months',
+                'Y-m-d H:i:s',
+                $tz['la'],
+                $tz['syd'],
+                '2016-05-05 17:00:00'
+            ),
+            array('2016-03-05 00:00:00', '+2 months', 'c', $tz['la'], $tz['syd'], '2016-05-05T17:00:00+10:00'),
+            array('2016-05-05T00:00:00-07:00', '-2 months', 'c', $tz['la'], $tz['syd'], '2016-03-05T19:00:00+11:00'),
+            array(
+                '2016-05-05T00:00:00-07:00',
+                '-2 months',
+                'Y-m-d H:i:s',
+                $tz['la'],
+                $tz['syd'],
+                '2016-03-05 19:00:00'
+            ),
+            array('2016-05-05 00:00:00', '-2 months', 'c', $tz['la'], $tz['syd'], '2016-03-05T19:00:00+11:00'),
+
+            array('2016-09-15T00:00:00-07:00', '+2 months', 'c', $tz['la'], $tz['syd'], '2016-11-15T19:00:00+11:00'),
+            array(
+                '2016-09-15T00:00:00-07:00',
+                '+2 months',
+                'Y-m-d H:i:s',
+                $tz['la'],
+                $tz['syd'],
+                '2016-11-15 19:00:00'
+            ),
+            array('2016-09-15 00:00:00', '+2 months', 'c', $tz['la'], $tz['syd'], '2016-11-15T19:00:00+11:00'),
+            array('2016-11-15T00:00:00-08:00', '-2 months', 'c', $tz['la'], $tz['syd'], '2016-09-15T17:00:00+10:00'),
+            array(
+                '2016-11-15T00:00:00-08:00',
+                '-2 months',
+                'Y-m-d H:i:s',
+                $tz['la'],
+                $tz['syd'],
+                '2016-09-15 17:00:00'
+            ),
+            array('2016-11-15 00:00:00', '-2 months', 'c', $tz['la'], $tz['syd'], '2016-09-15T17:00:00+10:00'),
+
+            // Convert between Sydney and LA across daylight savings for both
+            array('2016-03-05T00:00:00+11:00', '+2 months', 'c', $tz['syd'], $tz['la'], '2016-05-04T07:00:00-07:00'),
+            array(
+                '2016-03-05T00:00:00+11:00',
+                '+2 months',
+                'Y-m-d H:i:s',
+                $tz['syd'],
+                $tz['la'],
+                '2016-05-04 07:00:00'
+            ),
+            array('2016-03-05 00:00:00', '+2 months', 'c', $tz['syd'], $tz['la'], '2016-05-04T07:00:00-07:00'),
+            array('2016-05-05T00:00:00+10:00', '-2 months', 'c', $tz['syd'], $tz['la'], '2016-03-04T05:00:00-08:00'),
+            array(
+                '2016-05-05T00:00:00+10:00',
+                '-2 months',
+                'Y-m-d H:i:s',
+                $tz['syd'],
+                $tz['la'],
+                '2016-03-04 05:00:00'
+            ),
+            array('2016-05-05 00:00:00', '-2 months', 'c', $tz['syd'], $tz['la'], '2016-03-04T05:00:00-08:00'),
+
+            array('2016-09-15T00:00:00+10:00', '+2 months', 'c', $tz['syd'], $tz['la'], '2016-11-14T05:00:00-08:00'),
+            array(
+                '2016-09-15T00:00:00+10:00',
+                '+2 months',
+                'Y-m-d H:i:s',
+                $tz['syd'],
+                $tz['la'],
+                '2016-11-14 05:00:00'
+            ),
+            array('2016-09-15 00:00:00', '+2 months', 'c', $tz['syd'], $tz['la'], '2016-11-14T05:00:00-08:00'),
+            array('2016-11-15T00:00:00+11:00', '-2 months', 'c', $tz['syd'], $tz['la'], '2016-09-14T07:00:00-07:00'),
+            array(
+                '2016-11-15T00:00:00+11:00',
+                '-2 months',
+                'Y-m-d H:i:s',
+                $tz['syd'],
+                $tz['la'],
+                '2016-09-14 07:00:00'
+            ),
+            array('2016-11-15 00:00:00', '-2 months', 'c', $tz['syd'], $tz['la'], '2016-09-14T07:00:00-07:00'),
+
+            // Convert between LA and Sydney across daylight savings for LA only
+            array('2016-02-15T00:00:00-08:00', '+1 month', 'c', $tz['la'], $tz['syd'], '2016-03-15T18:00:00+11:00'),
+            array('2016-02-15T00:00:00-08:00', '+1 month', 'Y-m-d H:i:s', $tz['la'], $tz['syd'], '2016-03-15 18:00:00'),
+            array('2016-02-15 00:00:00', '+1 month', 'c', $tz['la'], $tz['syd'], '2016-03-15T18:00:00+11:00'),
+            array('2016-03-15T00:00:00-07:00', '-1 month', 'c', $tz['la'], $tz['syd'], '2016-02-15T19:00:00+11:00'),
+            array('2016-03-15T00:00:00-07:00', '-1 month', 'Y-m-d H:i:s', $tz['la'], $tz['syd'], '2016-02-15 19:00:00'),
+            array('2016-03-15 00:00:00', '-1 month', 'c', $tz['la'], $tz['syd'], '2016-02-15T19:00:00+11:00'),
+
+            array('2016-10-15T00:00:00-07:00', '+1 month', 'c', $tz['la'], $tz['syd'], '2016-11-15T19:00:00+11:00'),
+            array('2016-10-15T00:00:00-07:00', '+1 month', 'Y-m-d H:i:s', $tz['la'], $tz['syd'], '2016-11-15 19:00:00'),
+            array('2016-10-15 00:00:00', '+1 month', 'c', $tz['la'], $tz['syd'], '2016-11-15T19:00:00+11:00'),
+            array('2016-11-15T00:00:00-08:00', '-1 month', 'c', $tz['la'], $tz['syd'], '2016-10-15T18:00:00+11:00'),
+            array('2016-11-15T00:00:00-08:00', '-1 month', 'Y-m-d H:i:s', $tz['la'], $tz['syd'], '2016-10-15 18:00:00'),
+            array('2016-11-15 00:00:00', '-1 month', 'c', $tz['la'], $tz['syd'], '2016-10-15T18:00:00+11:00'),
+
+            // Convert across timezones and ensure the reverse is true
+            array('2016-01-15T00:00:00-08:00', '+1 month', 'c', $tz['la'], $tz['paris'], '2016-02-15T09:00:00+01:00'),
+            array('2016-02-15T09:00:00+01:00', '-1 month', 'c', $tz['paris'], $tz['la'], '2016-01-15T00:00:00-08:00'),
+            array('2016-01-15T00:00:00+00:00', '+1 month', 'c', 'UTC', $tz['la'], '2016-02-14T16:00:00-08:00'),
+            array('2016-02-14T16:00:00-08:00', '-1 month', 'c', $tz['la'], 'UTC', '2016-01-15T00:00:00+00:00'),
+            array('2016-01-15T00:00:00+11:00', '+1 month', 'c', $tz['syd'], $tz['paris'], '2016-02-14T14:00:00+01:00'),
+            array('2016-02-14T14:00:00+01:00', '-1 month', 'c', $tz['paris'], $tz['syd'], '2016-01-15T00:00:00+11:00'),
+
+            // Convert across timezones and daylight savings and ensure the reverse is true
+            array('2016-02-15T00:00:00-08:00', '+2 months', 'c', $tz['la'], $tz['paris'], '2016-04-15T09:00:00+02:00'),
+            array('2016-04-15T09:00:00+02:00', '-2 months', 'c', $tz['paris'], $tz['la'], '2016-02-15T00:00:00-08:00'),
+            array('2016-02-15T00:00:00+00:00', '+1 month', 'c', 'UTC', $tz['la'], '2016-03-14T17:00:00-07:00'),
+            // Note the reverse has an hour difference due to DST
+            array('2016-03-14T17:00:00-07:00', '-1 month', 'c', $tz['la'], 'UTC', '2016-02-15T01:00:00+00:00'),
+            array('2016-03-15T00:00:00+11:00', '+1 month', 'c', $tz['syd'], $tz['paris'], '2016-04-14T16:00:00+02:00'),
+            // Note the reverse has a two hour difference because the timezones' DST are in opposite directions
+            array('2016-04-14T16:00:00+02:00', '-1 month', 'c', $tz['paris'], $tz['syd'], '2016-03-15T02:00:00+11:00'),
+
+            // Convert across timezones and daylight savings and ensure the reverse is true
+            // BUT pass a relative from timezone to clear up the offset (maintaining time-of-day)
+            // resulting from crossing DST
+            array(
+                '2016-02-15T00:00:00-08:00',
+                '+2 months',
+                'c',
+                $tz['la'],
+                $tz['paris'],
+                '2016-04-15T09:00:00+02:00',
+                $tz['paris']
+            ),
+            array(
+                '2016-04-15T09:00:00+02:00',
+                '-2 months',
+                'c',
+                $tz['paris'],
+                $tz['la'],
+                '2016-02-15T00:00:00-08:00',
+                $tz['la']
+            ),
+            array(
+                '2016-02-15T00:00:00+00:00',
+                '+1 month',
+                'c',
+                'UTC',
+                $tz['la'],
+                '2016-03-14T16:00:00-07:00',
+                $tz['la']
+            ),
+            array('2016-03-14T17:00:00-07:00', '-1 month', 'c', $tz['la'], 'UTC', '2016-02-15T00:00:00+00:00', 'UTC'),
+            array(
+                '2016-03-15T00:00:00+11:00',
+                '+1 month',
+                'c',
+                $tz['syd'],
+                $tz['paris'],
+                '2016-04-14T14:00:00+02:00',
+                $tz['paris']
+            ),
+            array(
+                '2016-04-14T16:00:00+02:00',
+                '-1 month',
+                'c',
+                $tz['paris'],
+                $tz['syd'],
+                '2016-03-15T00:00:00+11:00',
+                $tz['syd']
+            ),
+
+            // Convert between dates where the given timezone does not represent the offset of the date given
+            // Note the timezone crossed DST and is off an hour from the original because of the offset
+            array('2016-03-15T00:00:00+00:00', '+1 month', 'c', $tz['syd'], $tz['syd'], '2016-04-15T11:00:00+10:00'),
+            array('2016-04-15T00:00:00+00:00', '-1 month', 'c', $tz['syd'], $tz['syd'], '2016-03-15T10:00:00+11:00'),
+
+            array('2016-03-05T00:00:00+00:00', '+1 month', 'c', $tz['la'], $tz['la'], '2016-04-04T16:00:00-07:00'),
+            array('2016-04-05T00:00:00+00:00', '-1 month', 'c', $tz['la'], $tz['la'], '2016-03-04T17:00:00-08:00'),
+
+            array('2016-03-05T00:00:00+00:00', '+1 month', 'c', $tz['la'], 'UTC', '2016-04-04T23:00:00+00:00'),
+            array('2016-04-05T00:00:00+00:00', '-1 month', 'c', $tz['la'], 'UTC', '2016-03-05T01:00:00+00:00'),
+
+            // Convert between dates where the given timezone does not represent the offset of the date given
+            // BUT we pass a relative from timezone to clear things up
+            array(
+                '2016-03-15T00:00:00+00:00',
+                '+1 month',
+                'c',
+                $tz['syd'],
+                $tz['syd'],
+                '2016-04-15T10:00:00+10:00',
+                'UTC'
+            ),
+            array(
+                '2016-04-15T00:00:00+00:00',
+                '-1 month',
+                'c',
+                $tz['syd'],
+                $tz['syd'],
+                '2016-03-15T11:00:00+11:00',
+                'UTC'
+            ),
+
+            array(
+                '2016-03-05T00:00:00+00:00',
+                '+1 month',
+                'c',
+                $tz['la'],
+                $tz['la'],
+                '2016-04-04T17:00:00-07:00',
+                'UTC'
+            ),
+            array(
+                '2016-04-05T00:00:00+00:00',
+                '-1 month',
+                'c',
+                $tz['la'],
+                $tz['la'],
+                '2016-03-04T16:00:00-08:00',
+                'UTC'
+            ),
+
+            array('2016-03-05T00:00:00+00:00', '+1 month', 'c', $tz['la'], 'UTC', '2016-04-05T00:00:00+00:00', 'UTC'),
+            array('2016-04-05T00:00:00+00:00', '-1 month', 'c', $tz['la'], 'UTC', '2016-03-05T00:00:00+00:00', 'UTC'),
+
+            // Convert between dates without timezone offsets where the given timezone does not represent the offset
+            // of the date given BUT we set a relative from timezone to clear things up
+            array('2016-03-15 00:00:00', '+1 month', 'c', $tz['syd'], $tz['syd'], '2016-04-15T00:00:00+10:00'),
+            array('2016-04-15 00:00:00', '-1 month', 'c', $tz['syd'], $tz['syd'], '2016-03-15T00:00:00+11:00'),
+            array('2016-03-15 00:00:00', '+1 month', 'c', $tz['syd'], $tz['syd'], '2016-04-15T00:00:00+10:00'),
+            array('2016-04-15 00:00:00', '-1 month', 'c', $tz['syd'], $tz['syd'], '2016-03-15T00:00:00+11:00'),
+            // Note that the date is off by the DST difference when modified if the original date represents a pre-DST
+            // timestamp that contains that offset unless that old timezone is passed in
+            array('2016-03-14 13:00:00', '+1 month', 'c', 'UTC', $tz['syd'], '2016-04-14T23:00:00+10:00'),
+            array('2016-04-14 14:00:00', '-1 month', 'c', 'UTC', $tz['syd'], '2016-03-15T01:00:00+11:00'),
+            array('2016-03-14 13:00:00', '+1 month', 'c', 'UTC', $tz['syd'], '2016-04-15T00:00:00+10:00', $tz['syd']),
+            array('2016-04-14 14:00:00', '-1 month', 'c', 'UTC', $tz['syd'], '2016-03-15T00:00:00+11:00', $tz['syd']),
+
+            array('2016-03-05 00:00:00', '+1 month', 'c', 'UTC', $tz['la'], '2016-04-04T17:00:00-07:00'),
+            array('2016-04-05 00:00:00', '-1 month', 'c', 'UTC', $tz['la'], '2016-03-04T16:00:00-08:00'),
+            // Note that the date is off by the DST difference when modified if the original date represents a pre-DST
+            // timestamp that contains that offset unless that old timezone is passed in
+            array('2016-03-05 08:00:00', '+1 month', 'c', 'UTC', $tz['la'], '2016-04-05T01:00:00-07:00'),
+            array('2016-04-05 07:00:00', '-1 month', 'c', 'UTC', $tz['la'], '2016-03-04T23:00:00-08:00'),
+            array('2016-03-05 08:00:00', '+1 month', 'c', 'UTC', $tz['la'], '2016-04-05T00:00:00-07:00', $tz['la']),
+            array('2016-04-05 07:00:00', '-1 month', 'c', 'UTC', $tz['la'], '2016-03-05T00:00:00-08:00', $tz['la']),
         );
     }
 
