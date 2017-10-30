@@ -152,11 +152,11 @@ class DateTest extends PHPUnit_Framework_TestCase
 
     public function modifyProvider()
     {
-        $tz = [
+        $tz = array(
             'la' => 'America/Los_Angeles',
             'paris' => 'Europe/Paris',
             'syd' => 'Australia/Sydney'
-        ];
+        );
 
         return array(
             array('2016-05-12T00:00:00+00:00', '+1 second', 'Y-m-d H:i:s', 'UTC', 'UTC', '2016-05-12 00:00:01'),
