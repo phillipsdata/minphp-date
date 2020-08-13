@@ -373,7 +373,7 @@ class Date
         $offset = isset($zone_info['offset']) ? $zone_info['offset'] : 0; // offset
 
         $offset_h = str_pad(abs((int)($offset/3600)), 2, '0', STR_PAD_LEFT); // offset in hours
-        $offset_h = ($offset < 0 ? true : false ? '-' : '+') . $offset_h;
+        $offset_h = (($offset < 0 ? true : false) ? '-' : '+') . $offset_h;
         $offset_m = str_pad(abs((int)(($offset/60)%60)), 2, '0', STR_PAD_LEFT); // offset in mins
 
         $timezone = array(
