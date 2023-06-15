@@ -456,7 +456,7 @@ class Date
             $date = null;
         }
 
-        $date_time = new DateTime($date, $timezone);
+        $date_time = new DateTime($date ?? 'now', $timezone);
 
         // Set a Unix timestamp as the date
         if ($timestamp !== null) {
