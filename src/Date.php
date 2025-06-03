@@ -137,7 +137,12 @@ class Date
         // Modify the date from the from timezone
         $modified_date = $this->dateTime($date_time->format('c'));
         $modified_date->setTimezone($tz_from);
-        $modified_date->modify($modifier);
+
+        try {
+            $modified_date->modify($modifier);
+        } catch (\Throwable $e) {
+            // Nothing to do
+        }
 
         return $this->cast($modified_date->format('c'), $format);
     }
