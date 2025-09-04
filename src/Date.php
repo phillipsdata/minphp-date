@@ -4,6 +4,7 @@ namespace Minphp\Date;
 use DateTime;
 use DateTimeZone;
 use IntlDateFormatter;
+use Throwable;
 
 /**
  * Provides methods useful in formatting dates and date timestamps.
@@ -30,7 +31,7 @@ class Date
         'ar' => array('يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'),
         'cs' => array('leden', 'únor', 'březen', 'duben', 'květen', 'červen', 'červenec', 'srpen', 'září', 'říjen', 'listopad', 'prosinec'),
         'da' => array('januar', 'februar', 'marts', 'april', 'maj', 'juni', 'juli', 'august', 'september', 'oktober', 'november', 'december'),
-        'de' => array('Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'),
+        'de' => array('januar', 'februar', 'märz', 'april', 'mai', 'juni', 'juli', 'august', 'september', 'oktober', 'november', 'dezember'),
         'el' => array('Ιανουάριος', 'Φεβρουάριος', 'Μάρτιος', 'Απρίλιος', 'Μάιος', 'Ιούνιος', 'Ιούλιος', 'Αύγουστος', 'Σεπτέμβριος', 'Οκτώβριος', 'Νοέμβριος', 'Δεκέμβριος'),
         'en' => array('january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'),
         'es' => array('enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'),
@@ -278,15 +279,21 @@ class Date
             }
 
             // Format the month
-            if (isset($this->months[$this->language])) {
-                $month_formats = [
-                    'F' => $this->getMonth((int) $date_time->format('n'), 'F', true),
-                    'M' => $this->getMonth((int) $date_time->format('n'), 'M', true)
-                ];
-                $format = str_replace(array_keys($month_formats), array_values($month_formats), $format);
+            $month_formats = array('F', 'M');
+            foreach ($month_formats as $month_format) {
+                $format = str_replace($month_format, '[\\' . $month_format . ']', $format);
             }
 
-            return $date_time->format($format);
+            $date = $date_time->format($format);
+            foreach ($month_formats as $month_format) {
+                $date = str_replace(
+                    '[' . $month_format . ']',
+                    $this->getMonth((int) $date_time->format('n'), $month_format),
+                    $date
+                );
+            }
+
+            return $date;
         }
 
         return null;
@@ -336,10 +343,9 @@ class Date
      *
      * @param int $month The month (1 = Jan, 12 = Dec)
      * @param string $format The format for the month
-     * @param bool $escape True to return a escaped string, to be used in date()
      * @return string The translated month name
      */
-    private function getMonth(int $month, $format = 'F', bool $escape = false)
+    private function getMonth(int $month, $format = 'F')
     {
         // Set the date using the timezone from date
         $timezone = ($this->timezone_from ? $this->dateTimeZone($this->timezone_from) : null);
@@ -348,17 +354,42 @@ class Date
         // Set given month as the current date
         $date->setDate($date->format('Y'), $month, 1);
 
-        // Set month name
+        // Use IntlDateFormatter, if available
+        if (class_exists('IntlDateFormatter', true)) {
+            $timezone = ($this->timezone_to ? $this->dateTimeZone($this->timezone_to) : null);
+            if (empty($timezone)) {
+                $timezone = ($this->timezone_from ? $this->dateTimeZone($this->timezone_from) : null);
+            }
+
+            // Set format patterns
+            $patterns = [
+                'F' => 'MMMM',
+                'M' => 'MMM'
+            ];
+
+            // Initialize date formatter
+            $formatter = new IntlDateFormatter(
+                $this->locale,
+                IntlDateFormatter::FULL,
+                IntlDateFormatter::FULL,
+                $timezone,
+                null,
+                $patterns[$format]
+            );
+
+            $month_name = $formatter->format($date);
+
+            if (!empty($month_name)) {
+                return $month_name;
+            }
+        }
+
+        // Fallback to built in translations
         $month_name = $date->format($format);
         if (isset($this->months[$this->language])) {
-            $month_name = ucfirst($this->months[$this->language][$month - 1]);
-
             switch ($format) {
                 case 'F':
                     $month_name = ucfirst($this->months[$this->language][$month - 1]);
-                    break;
-                case 'm':
-                    $month_name = $date->format('m');
                     break;
                 case 'M':
                     $month_name = ucfirst($this->months[$this->language][$month - 1]);
@@ -366,14 +397,10 @@ class Date
                         $month_name = mb_substr($month_name, 0, 3);
                     }
                     break;
-                case 'n':
-                    $month_name = $date->format('n');
+                default:
+                    $month_name = $date->format($format);
                     break;
             }
-        }
-
-        if ($escape) {
-            $month_name = implode('', array_map(fn($char) => '\\' . $char, str_split($month_name)));
         }
 
         return $month_name;
@@ -543,7 +570,6 @@ class Date
      */
     private function mergeArrays(array $arr1, array $arr2)
     {
-
         foreach ($arr2 as $key => $value) {
             if (array_key_exists($key, $arr1) && is_array($value)) {
                 $arr1[$key] = $this->mergeArrays($arr1[$key], $arr2[$key]);
