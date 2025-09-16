@@ -363,10 +363,10 @@ class Date
 
             // Set format patterns
             $patterns = [
-                'F' => 'MMMM',
-                'M' => 'MMM',
-                'm' => 'MM',
-                'n' => 'M'
+                'M' => ' MMM ',
+                'F' => ' MMMM ',
+                'm' => ' MM ',
+                'n' => ' M '
             ];
 
             // Initialize date formatter
@@ -376,7 +376,7 @@ class Date
                 IntlDateFormatter::FULL,
                 $timezone,
                 null,
-                str_replace(array_keys($patterns), array_values($patterns), $format)
+                preg_replace('/ +/', ' ', str_replace(array_keys($patterns), array_values($patterns), $format))
             );
 
             $month_name = $formatter->format($date);
