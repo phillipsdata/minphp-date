@@ -362,12 +362,12 @@ class Date
             }
 
             // Set format patterns
-            $patterns = [
+            $patterns = array(
                 'M' => ' MMM ',
                 'F' => ' MMMM ',
                 'm' => ' MM ',
                 'n' => ' M '
-            ];
+            );
 
             // Initialize date formatter
             $formatter = new IntlDateFormatter(
