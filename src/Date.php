@@ -91,7 +91,9 @@ class Date
     {
         $this->setFormats($formats);
         $this->setTimezone($timezone_from, $timezone_to);
-        $this->setLocale($locale);
+        if ($locale) {
+            $this->setLocale($locale);
+        }
     }
 
     /**
