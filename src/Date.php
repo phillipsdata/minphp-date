@@ -349,20 +349,13 @@ class Date
      */
     private function getMonth(int $month, $format = 'F')
     {
-        // Set the date using the timezone from date
-        $timezone = ($this->timezone_from ? $this->dateTimeZone($this->timezone_from) : null);
-        $date = $this->dateTime(null, $timezone);
+        $date = $this->dateTime(null);
 
         // Set given month as the current date
         $date->setDate($date->format('Y'), $month, 1);
 
         // Use IntlDateFormatter, if available
         if (class_exists('IntlDateFormatter', true)) {
-            $timezone = ($this->timezone_to ? $this->dateTimeZone($this->timezone_to) : null);
-            if (empty($timezone)) {
-                $timezone = ($this->timezone_from ? $this->dateTimeZone($this->timezone_from) : null);
-            }
-
             // Set format patterns
             $patterns = array(
                 'M' => ' MMM ',
@@ -376,7 +369,7 @@ class Date
                 $this->locale,
                 IntlDateFormatter::FULL,
                 IntlDateFormatter::FULL,
-                $timezone,
+                null,
                 null,
                 preg_replace('/ +/', ' ', str_replace(array_keys($patterns), array_values($patterns), $format))
             );
