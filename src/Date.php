@@ -87,7 +87,7 @@ class Date
      *  - date_time A date time
      * @see Date::cast()
      */
-    public function __construct(array $formats = null, $timezone_from = null, $timezone_to = null, $locale = null)
+    public function __construct(?array $formats = null, $timezone_from = null, $timezone_to = null, $locale = null)
     {
         $this->setFormats($formats);
         $this->setTimezone($timezone_from, $timezone_to);
@@ -138,7 +138,7 @@ class Date
      *  - date_time A date time
      * @return this
      */
-    public function setFormats(array $formats = null)
+    public function setFormats(?array $formats = null)
     {
         $this->formats = array_merge($this->formats, (array)$formats);
         return $this;
@@ -584,7 +584,7 @@ class Date
      * @param DateTimeZone $timezone The timezone
      * @return DateTime
      */
-    private function dateTime($date = null, DateTimeZone $timezone = null)
+    private function dateTime($date = null, ?DateTimeZone $timezone = null)
     {
         // Create the DateTime object from a string or Unix timestamp
         $timestamp = null;
